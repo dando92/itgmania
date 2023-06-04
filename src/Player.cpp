@@ -40,6 +40,7 @@
 #include "GameCommand.h"
 #include "LocalizedString.h"
 #include "AdjustSync.h"
+#include "SyncStartManager.h"
 
 #include <cmath>
 #include <cstddef>
@@ -832,6 +833,8 @@ void Player::Update( float fDeltaTime )
 	// Don't update if we haven't been loaded yet.
 	if( !m_bLoaded )
 		return;
+
+	this->m_bBroadcastScoreThisUpdate = false;
 
 	//LOG->Trace( "Player::Update(%f)", fDeltaTime );
 
