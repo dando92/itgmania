@@ -23,6 +23,7 @@ struct ScoreData {
 	bool failed;
 	int tapNoteScores[NUM_TapNoteScore];
 	int holdNoteScores[NUM_HoldNoteScore];
+	int totalHolds;
 };
 
 struct SyncStartScore {

@@ -32,7 +32,7 @@ SyncStartManager *SYNCMAN;
 #define FINAL_SCORE 0x05
 #define FINAL_COURSE_SCORE 0x06
 
-#define MISC_ITEMS_LENGTH 9
+#define MISC_ITEMS_LENGTH 10
 #define ALL_ITEMS_LENGTH (MISC_ITEMS_LENGTH + NUM_TapNoteScore + NUM_HoldNoteScore)
 
 std::vector<std::string> split(const std::string& str, const std::string& delim) {
@@ -225,12 +225,15 @@ std::stringstream SyncStartManager::writeScoreMessage(const PlayerStageStats& pP
         msg << m_iTapNoteScore << '|';
     }
 
-    for (int i = 0; i < NUM_HoldNoteScore; ++i) {
-        msg << pPlayerStageStats.m_iHoldNoteScores[i];
-        if (i != NUM_HoldNoteScore - 1) {
-            msg << '|';
-        }
+    for (int m_iHoldNoteScore : pPlayerStageStats.m_iHoldNoteScores) {
+        msg << m_iHoldNoteScore << '|';
     }
+
+	int possibleHolds = (int) pPlayerStageStats.m_radarPossible[RadarCategory_Holds];
+	int possibleRolls = (int) pPlayerStageStats.m_radarPossible[RadarCategory_Rolls];
+	int totalHolds = possibleHolds + possibleRolls;
+
+	msg << totalHolds;
 
     return msg;
 }
@@ -286,6 +289,8 @@ void SyncStartManager::receiveScoreChange(struct in_addr in_addr, const std::str
 		for (int & holdNoteScore : scoreData.holdNoteScores) {
 			holdNoteScore = std::stoi(*iter++);
 		}
+
+		scoreData.totalHolds = std::stoi(*iter++);
 
 		this->syncStartScoreKeeper.AddScore(scorePlayer, scoreData);
 		MESSAGEMAN->Broadcast("SyncStartPlayerScoresChanged");
