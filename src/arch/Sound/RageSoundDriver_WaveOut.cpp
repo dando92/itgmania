@@ -28,14 +28,14 @@ const int num_chunks = 8;
 const int chunksize_frames = buffersize_frames / num_chunks;
 const int chunksize = buffersize / num_chunks; /* in bytes */
 
-static RString wo_ssprintf( MMRESULT err, const char *szFmt, ...)
+static std::string wo_ssprintf( MMRESULT err, const char *szFmt, ...)
 {
 	char szBuf[MAXERRORLENGTH];
 	waveOutGetErrorText( err, szBuf, MAXERRORLENGTH );
 
 	va_list va;
 	va_start( va, szFmt );
-	RString s = vssprintf( szFmt, va );
+	std::string s = vssprintf( szFmt, va );
 	va_end( va );
 
 	return s += ssprintf( "(%s)", szBuf );
@@ -50,7 +50,7 @@ int RageSoundDriver_WaveOut::MixerThread_start( void *p )
 void RageSoundDriver_WaveOut::MixerThread()
 {
 	if( !SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL) )
-		LOG->Warn( werr_ssprintf(GetLastError(), "Failed to set sound thread priority") );
+		LOG->Warn( werr_ssprintf(GetLastError(), "Failed to set sound thread priority").c_str() );
 
 	while( !m_bShutdown )
 	{
@@ -89,7 +89,7 @@ bool RageSoundDriver_WaveOut::GetData()
 void RageSoundDriver_WaveOut::SetupDecodingThread()
 {
 	if( !SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL) )
-		LOG->Warn( werr_ssprintf(GetLastError(), "Failed to set sound thread priority") );
+		LOG->Warn( werr_ssprintf(GetLastError(), "Failed to set sound thread priority").c_str() );
 }
 
 std::int64_t RageSoundDriver_WaveOut::GetPosition() const
@@ -113,7 +113,7 @@ RageSoundDriver_WaveOut::RageSoundDriver_WaveOut()
 	m_hWaveOut = nullptr;
 }
 
-RString RageSoundDriver_WaveOut::Init()
+std::string RageSoundDriver_WaveOut::Init()
 {
 	m_iSampleRate = PREFSMAN->m_iSoundPreferredSampleRate;
 	if( m_iSampleRate == 0 )
@@ -130,9 +130,9 @@ RString RageSoundDriver_WaveOut::Init()
 
 	std::vector<UINT> deviceIds;
 	if (!PREFSMAN->m_iSoundDevice.Get().empty()) {
-		std::vector<RString> portNames;
+		std::vector<std::string> portNames;
 		split(PREFSMAN->m_iSoundDevice.Get(), ",", portNames, true);
-		for (const RString& device : portNames) {
+		for (const std::string& device : portNames) {
 			int id = StringToInt(device, /*pos=*/0, /*base=*/10, /*exceptVal=*/-1);
 			if (id != -1) {
 				deviceIds.push_back(id);
@@ -174,7 +174,7 @@ RString RageSoundDriver_WaveOut::Init()
 	MixingThread.SetName( "Mixer thread" );
 	MixingThread.Create( MixerThread_start, this );
 
-	return RString();
+	return std::string();
 }
 
 RageSoundDriver_WaveOut::~RageSoundDriver_WaveOut()

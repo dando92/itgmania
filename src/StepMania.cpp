@@ -127,11 +127,11 @@ static LocalizedString NO_VSYNC		("StepMania","NoVsync");
 static LocalizedString SMOOTH_LINES	("StepMania","SmoothLines");
 static LocalizedString NO_SMOOTH_LINES	("StepMania","NoSmoothLines");
 
-static RString GetActualGraphicOptionsString()
+static std::string GetActualGraphicOptionsString()
 {
 	const VideoModeParams &params = DISPLAY->GetActualVideoModeParams();
-	RString sFormat = "%s %s %dx%d %d "+COLOR.GetValue()+" %d "+TEXTURE.GetValue()+" %dHz %s %s";
-	RString sLog = ssprintf( sFormat,
+	std::string sFormat = "%s %s %dx%d %d "+COLOR.GetValue()+" %d "+TEXTURE.GetValue()+" %dHz %s %s";
+	std::string sLog = ssprintf( sFormat.c_str(),
 		DISPLAY->GetApiDescription().c_str(),
 		(params.windowed? WINDOWED : FULLSCREEN).GetValue().c_str(),
 		(int)params.width,
@@ -234,7 +234,7 @@ void StepMania::ApplyGraphicOptions()
 
 	VideoModeParams params;
 	GetPreferredVideoModeParams( params );
-	RString sError = DISPLAY->SetVideoMode( params, bNeedReload );
+	std::string sError = DISPLAY->SetVideoMode( params, bNeedReload );
 	if( sError != "" )
 		RageException::Throw( "%s", sError.c_str() );
 
@@ -336,7 +336,7 @@ void ShutdownGame()
 	SAFE_DELETE( HOOKS );
 }
 
-static void HandleException( const RString &sError )
+static void HandleException( const std::string &sError )
 {
 	if( g_bAutoRestart )
 		HOOKS->RestartProgram();
@@ -355,9 +355,9 @@ void StepMania::ResetGame()
 
 	if( !THEME->DoesThemeExist( THEME->GetCurThemeName() ) )
 	{
-		RString sGameName = GAMESTATE->GetCurrentGame()->m_szName;
+		std::string sGameName = GAMESTATE->GetCurrentGame()->m_szName;
 		if( !THEME->DoesThemeExist(sGameName) )
-			sGameName = PREFSMAN->m_sDefaultTheme; // was previously "default" -aj
+			sGameName = PREFSMAN->m_sDefaultTheme.Get(); // was previously "default" -aj
 		THEME->SwitchThemeAndLanguage( sGameName, THEME->GetCurLanguage(), PREFSMAN->m_bPseudoLocalize );
 		TEXTUREMAN->DoDelayedDelete();
 	}
@@ -365,23 +365,23 @@ void StepMania::ResetGame()
 	PREFSMAN->SavePrefsToDisk();
 }
 
-ThemeMetric<RString>	INITIAL_SCREEN	("Common","InitialScreen");
-RString StepMania::GetInitialScreen()
+ThemeMetric<std::string>	INITIAL_SCREEN	("Common","InitialScreen");
+std::string StepMania::GetInitialScreen()
 {
 	if(PREFSMAN->m_sTestInitialScreen.Get() != "" &&
 		SCREENMAN->IsScreenNameValid(PREFSMAN->m_sTestInitialScreen))
 	{
 		return PREFSMAN->m_sTestInitialScreen;
 	}
-	RString screen_name= INITIAL_SCREEN.GetValue();
+	std::string screen_name= INITIAL_SCREEN.GetValue();
 	if(!SCREENMAN->IsScreenNameValid(screen_name))
 	{
 		screen_name= "ScreenInitialScreenIsInvalid";
 	}
 	return screen_name;
 }
-ThemeMetric<RString>	SELECT_MUSIC_SCREEN	("Common","SelectMusicScreen");
-RString StepMania::GetSelectMusicScreen()
+ThemeMetric<std::string>	SELECT_MUSIC_SCREEN	("Common","SelectMusicScreen");
+std::string StepMania::GetSelectMusicScreen()
 {
 	return SELECT_MUSIC_SCREEN.GetValue();
 }
@@ -447,8 +447,8 @@ static void AdjustForChangedSystemCapabilities()
 
 struct VideoCardDefaults
 {
-	RString sDriverRegex;
-	RString sVideoRenderers;
+	std::string sDriverRegex;
+	std::string sVideoRenderers;
 	int iWidth;
 	int iHeight;
 	int iDisplayColor;
@@ -459,8 +459,8 @@ struct VideoCardDefaults
 
 	VideoCardDefaults() {}
 	VideoCardDefaults(
-		RString sDriverRegex_,
-		RString sVideoRenderers_,
+		std::string sDriverRegex_,
+		std::string sVideoRenderers_,
 		int iWidth_,
 		int iHeight_,
 		int iDisplayColor_,
@@ -506,7 +506,7 @@ struct VideoCardDefaults
 };
 
 
-static RString GetVideoDriverName()
+static std::string GetVideoDriverName()
 {
 #if defined(_WINDOWS)
 	return GetPrimaryVideoDriverName();
@@ -518,7 +518,7 @@ static RString GetVideoDriverName()
 bool CheckVideoDefaultSettings()
 {
 	// Video card changed since last run
-	RString sVideoDriver = GetVideoDriverName();
+	std::string sVideoDriver = GetVideoDriverName();
 
 	LOG->Trace( "Last seen video driver: %s", PREFSMAN->m_sLastSeenVideoDriver.Get().c_str() );
 
@@ -529,7 +529,7 @@ bool CheckVideoDefaultSettings()
 	{
 		defaults = g_VideoCardDefaults[i];
 
-		RString sDriverRegex = defaults.sDriverRegex;
+		std::string sDriverRegex = defaults.sDriverRegex;
 		Regex regex( sDriverRegex );
 		if( regex.Compare(sVideoDriver) )
 		{
@@ -572,7 +572,7 @@ bool CheckVideoDefaultSettings()
 		// Update last seen video card
 		PREFSMAN->m_sLastSeenVideoDriver.Set( GetVideoDriverName() );
 	}
-	else if( PREFSMAN->m_sVideoRenderers.Get().CompareNoCase(defaults.sVideoRenderers) )
+	else if( StringUtil::EqualsNoCase(PREFSMAN->m_sVideoRenderers.Get(), defaults.sVideoRenderers) )
 	{
 		LOG->Warn("Video renderer list has been changed from '%s' to '%s'",
 				defaults.sVideoRenderers.c_str(), PREFSMAN->m_sVideoRenderers.Get().c_str() );
@@ -620,12 +620,12 @@ RageDisplay *CreateDisplay()
 	VideoModeParams params;
 	StepMania::GetPreferredVideoModeParams( params );
 
-	RString error = ERROR_INITIALIZING_CARD.GetValue()+"\n\n"+
+	std::string error = ERROR_INITIALIZING_CARD.GetValue()+"\n\n"+
 		ERROR_DONT_FILE_BUG.GetValue()+"\n\n"
 		VIDEO_TROUBLESHOOTING_URL "\n\n"+
-		ssprintf(ERROR_VIDEO_DRIVER.GetValue(), GetVideoDriverName().c_str())+"\n\n";
+		ssprintf(ERROR_VIDEO_DRIVER.GetValue().c_str(), GetVideoDriverName().c_str())+"\n\n";
 
-	std::vector<RString> asRenderers;
+	std::vector<std::string> asRenderers;
 	split( PREFSMAN->m_sVideoRenderers, ",", asRenderers, true );
 
 	if( asRenderers.empty() )
@@ -634,43 +634,43 @@ RageDisplay *CreateDisplay()
 	RageDisplay *pRet = nullptr;
 	for( unsigned i=0; i<asRenderers.size(); i++ )
 	{
-		RString sRenderer = asRenderers[i];
+		std::string sRenderer = asRenderers[i];
 
-		if( sRenderer.CompareNoCase("opengl")==0 )
+		if( StringUtil::EqualsNoCase(sRenderer, "opengl") )
 		{
 #if defined(SUPPORT_OPENGL)
 			pRet = new RageDisplay_Legacy;
 #endif
 		}
-		else if( sRenderer.CompareNoCase("gles2")==0 )
+		else if( StringUtil::EqualsNoCase(sRenderer, "gles2") )
 		{
 #if defined(SUPPORT_GLES2)
 			pRet = new RageDisplay_GLES2;
 #endif
 		}
-		else if( sRenderer.CompareNoCase("d3d")==0 )
+		else if( StringUtil::EqualsNoCase(sRenderer, "d3d") )
 		{
 // TODO: ANGLE/RageDisplay_Modern
 #if defined(SUPPORT_D3D)
 			pRet = new RageDisplay_D3D;
 #endif
 		}
-		else if( sRenderer.CompareNoCase("null")==0 )
+		else if( StringUtil::EqualsNoCase(sRenderer, "null") )
 		{
 			return new RageDisplay_Null;
 		}
 		else
 		{
-			RageException::Throw( ERROR_UNKNOWN_VIDEO_RENDERER.GetValue(), sRenderer.c_str() );
+			RageException::Throw( ERROR_UNKNOWN_VIDEO_RENDERER.GetValue().c_str(), sRenderer.c_str() );
 		}
 
 		if( pRet == nullptr )
 			continue;
 
-		RString sError = pRet->Init( params, PREFSMAN->m_bAllowUnacceleratedRenderer );
+		std::string sError = pRet->Init( params, PREFSMAN->m_bAllowUnacceleratedRenderer );
 		if( !sError.empty() )
 		{
-			error += ssprintf(ERROR_INITIALIZING.GetValue(), sRenderer.c_str())+"\n" + sError;
+			error += ssprintf(ERROR_INITIALIZING.GetValue().c_str(), sRenderer.c_str())+"\n" + sError;
 			SAFE_DELETE( pRet );
 			error += "\n\n\n";
 			continue;
@@ -715,14 +715,14 @@ void StepMania::InitializeCurrentGame( const Game* g )
 
 	GAMESTATE->SetCurGame( g );
 
-	RString sAnnouncer = PREFSMAN->m_sAnnouncer;
-	RString sTheme = PREFSMAN->m_sTheme;
-	RString sGametype = GAMESTATE->GetCurrentGame()->m_szName;
-	RString sLanguage = PREFSMAN->m_sLanguage;
+	std::string sAnnouncer = PREFSMAN->m_sAnnouncer;
+	std::string sTheme = PREFSMAN->m_sTheme;
+	std::string sGametype = GAMESTATE->GetCurrentGame()->m_szName;
+	std::string sLanguage = PREFSMAN->m_sLanguage;
 
 	if( sAnnouncer.empty() )
 		sAnnouncer = GAMESTATE->GetCurrentGame()->m_szName;
-	RString argCurGame;
+	std::string argCurGame;
 	if( GetCommandlineArgument( "game", &argCurGame) && argCurGame != sGametype )
 	{
 		Game const* new_game= GAMEMAN->StringToGame(argCurGame);
@@ -742,7 +742,7 @@ void StepMania::InitializeCurrentGame( const Game* g )
 
 	// process gametype, theme and language command line arguments;
 	// these change the preferences in order for transparent loading -aj
-	RString argTheme;
+	std::string argTheme;
 	if( GetCommandlineArgument(	"theme",&argTheme) && argTheme != sTheme )
 	{
 		sTheme = argTheme;
@@ -750,7 +750,7 @@ void StepMania::InitializeCurrentGame( const Game* g )
 		PREFSMAN->m_sTheme.Set(sTheme);
 	}
 
-	RString argLanguage;
+	std::string argLanguage;
 	if( GetCommandlineArgument(	"language",&argLanguage) )
 	{
 		sLanguage = argLanguage;
@@ -770,20 +770,20 @@ void StepMania::InitializeCurrentGame( const Game* g )
 	}
 }
 
-static void MountTreeOfZips( const RString &dir )
+static void MountTreeOfZips( const std::string &dir )
 {
-	std::vector<RString> dirs;
+	std::vector<std::string> dirs;
 	dirs.push_back( dir );
 
 	while( dirs.size() )
 	{
-		RString path = dirs.back();
+		std::string path = dirs.back();
 		dirs.pop_back();
 
 		if( !IsADirectory(path) )
 			continue;
 
-		std::vector<RString> zips;
+		std::vector<std::string> zips;
 		GetDirListing( path + "/*.zip", zips, false, true );
 		GetDirListing( path + "/*.smzip", zips, false, true );
 
@@ -800,11 +800,11 @@ static void MountTreeOfZips( const RString &dir )
 	}
 }
 
-static void MountFolders(const RString &type, const RString &realPathList, const RString &mountPoint)
+static void MountFolders(const std::string &type, const std::string &realPathList, const std::string &mountPoint)
 {
 	if (!realPathList.empty())
 	{
-		std::vector<RString> dirs;
+		std::vector<std::string> dirs;
 		split(realPathList, ",", dirs, true);
 		for (const auto& dir : dirs)
 			FILEMAN->Mount(type, dir, mountPoint);
@@ -828,7 +828,7 @@ static void WriteLogHeader()
 
 	if( g_argc > 1 )
 	{
-		RString args;
+		std::string args;
 		for( int i = 1; i < g_argc; ++i )
 		{
 			if( i>1 )
@@ -964,7 +964,7 @@ int sm_main(int argc, char* argv[])
 	{
 		/* Now that THEME is loaded, load the icon and splash for the current
 		 * theme into the loading window. */
-		RString sError;
+		std::string sError;
 		RageSurface *pSurface = RageSurfaceUtils::LoadFile( THEME->GetPathG( "Common", "window icon" ), sError );
 		if( pSurface != nullptr )
 			pLoadingWindow->SetIcon( pSurface );
@@ -1045,7 +1045,7 @@ int sm_main(int argc, char* argv[])
 	SCREENMAN->SetNewScreen( StepMania::GetInitialScreen() );
 
 	// Do this after ThemeChanged so that we can show a system message
-	RString sMessage;
+	std::string sMessage;
 	if( INPUTMAPPER->CheckForChangedInputDevicesAndRemap(sMessage) )
 		SCREENMAN->SystemMessage( sMessage );
 
@@ -1061,17 +1061,17 @@ int sm_main(int argc, char* argv[])
 	return 0;
 }
 
-RString StepMania::SaveScreenshot( RString Dir, bool SaveCompressed, bool MakeSignature, RString NamePrefix, RString NameSuffix )
+std::string StepMania::SaveScreenshot( std::string Dir, bool SaveCompressed, bool MakeSignature, std::string NamePrefix, std::string NameSuffix )
 {
 	/* As of sm-ssc v1.0 rc2, screenshots are no longer named by an arbitrary
 	 * index. This was causing naming issues for some unknown reason, so we have
 	 * changed the screenshot names to a non-blocking format: date and time.
 	 * As before, we ignore the extension. -aj */
-	RString FileNameNoExtension = NamePrefix + DateTime::GetNowDateTime().GetString() + NameSuffix;
+	std::string FileNameNoExtension = NamePrefix + DateTime::GetNowDateTime().GetString() + NameSuffix;
 	// replace space with underscore.
-	FileNameNoExtension.Replace(" ","_");
+	StringUtil::Replace(FileNameNoExtension, ' ', '_');
 	// colons are illegal in filenames.
-	FileNameNoExtension.Replace(":","");
+	StringUtil::Replace(FileNameNoExtension, ":", "");
 
 	// Save the screenshot. If writing lossy to a memcard, use
 	// SAVE_LOSSY_LOW_QUAL, so we don't eat up lots of space.
@@ -1083,13 +1083,13 @@ RString StepMania::SaveScreenshot( RString Dir, bool SaveCompressed, bool MakeSi
 	else
 		fmt = RageDisplay::SAVE_LOSSLESS_SENSIBLE;
 
-	RString FileName = FileNameNoExtension + "." + (SaveCompressed ? "jpg" : "png");
-	RString Path = Dir+FileName;
+	std::string FileName = FileNameNoExtension + "." + (SaveCompressed ? "jpg" : "png");
+	std::string Path = Dir+FileName;
 	bool Result = DISPLAY->SaveScreenshot( Path, fmt );
 	if( !Result )
 	{
 		SCREENMAN->PlayInvalidSound();
-		return RString();
+		return std::string();
 	}
 
 	SCREENMAN->PlayScreenshotSound();
@@ -1459,9 +1459,9 @@ int LuaFunc_SaveScreenshot(lua_State *L)
 	PlayerNumber pn= Enum::Check<PlayerNumber>(L, 1, true);
 	bool compress= lua_toboolean(L, 2) > 0;
 	bool sign= lua_toboolean(L, 3) > 0;
-	RString prefix= luaL_optstring(L, 4, "");
-	RString suffix= luaL_optstring(L, 5, "");
-	RString dir;
+	std::string prefix= luaL_optstring(L, 4, "");
+	std::string suffix= luaL_optstring(L, 5, "");
+	std::string dir;
 	if(pn == PlayerNumber_Invalid)
 	{
 		dir= "Screenshots/";
@@ -1474,7 +1474,7 @@ int LuaFunc_SaveScreenshot(lua_State *L)
 			MEMCARDMAN->MountCard(pn);
 		}
 	}
-	RString filename= StepMania::SaveScreenshot(dir, compress, sign, prefix, suffix);
+	std::string filename= StepMania::SaveScreenshot(dir, compress, sign, prefix, suffix);
 	if(pn != PlayerNumber_Invalid)
 	{
 		if(PROFILEMAN->ProfileWasLoadedFromMemoryCard(pn))
@@ -1482,9 +1482,9 @@ int LuaFunc_SaveScreenshot(lua_State *L)
 			MEMCARDMAN->UnmountCard(pn);
 		}
 	}
-	RString path= dir + filename;
+	std::string path= dir + filename;
 	lua_pushboolean(L, !filename.empty());
-	lua_pushstring(L, path);
+	lua_pushstring(L, path.c_str());
 	return 2;
 }
 void LuaFunc_Register_SaveScreenshot(lua_State *L);

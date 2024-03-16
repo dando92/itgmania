@@ -57,7 +57,7 @@ static LocalizedString STANDARD_DEVIATION( "ScreenSyncOverlay", "Standard deviat
 void ScreenSyncOverlay::UpdateText()
 {
 	// Update Status
-	std::vector<RString> vs;
+	std::vector<std::string> vs;
 
 	PlayerController pc = GamePreferences::m_AutoPlay.Get();
 	switch( pc )
@@ -100,7 +100,7 @@ void ScreenSyncOverlay::UpdateText()
 		float fNew = PREFSMAN->m_fGlobalOffsetSeconds;
 		float fOld = AdjustSync::s_fGlobalOffsetSecondsOriginal;
 		float fStdDev = AdjustSync::s_fStandardDeviation;
-		RString s;
+		std::string s;
 		s += OLD_OFFSET.GetValue() + ssprintf( ": %0.3f\n", fOld );
 		s += NEW_OFFSET.GetValue() + ssprintf( ": %0.3f\n", fNew );
 		s += STANDARD_DEVIATION.GetValue() + ssprintf( ": %0.3f\n", fStdDev );
@@ -109,7 +109,7 @@ void ScreenSyncOverlay::UpdateText()
 	}
 	else
 	{
-		set_adjustments.SetParam("text", RString(""));
+		set_adjustments.SetParam("text", std::string(""));
 	}
 	m_overlay->HandleMessage(set_adjustments);
 }

@@ -27,7 +27,7 @@ static Preference<bool> g_bPalettedImageCache( "PalettedImageCache", false );
 
 /* Neither a global or a file scope static can be used for this because
  * the order of initialization of nonlocal objects is unspecified. */
-//const RString IMAGE_CACHE_INDEX = SpecialFiles::CACHE_DIR + "images.cache";
+//const std::string IMAGE_CACHE_INDEX = SpecialFiles::CACHE_DIR + "images.cache";
 #define IMAGE_CACHE_INDEX (SpecialFiles::CACHE_DIR + "images.cache")
 
 /* Call CacheImage to cache a image by path.  If the image is already
@@ -52,10 +52,10 @@ static Preference<bool> g_bPalettedImageCache( "PalettedImageCache", false );
 ImageCache *IMAGECACHE; // global and accessible from anywhere in our program
 
 
-static std::map<RString, RageSurface*> g_ImagePathToImage;
+static std::map<std::string, RageSurface*> g_ImagePathToImage;
 static int g_iDemandRefcount = 0;
 
-RString ImageCache::GetImageCachePath( RString sImageDir ,RString sImagePath )
+std::string ImageCache::GetImageCachePath( std::string sImageDir ,std::string sImagePath )
 {
 	return SongCacheIndex::GetCacheFilePath( sImageDir, sImagePath );
 }
@@ -63,7 +63,7 @@ RString ImageCache::GetImageCachePath( RString sImageDir ,RString sImagePath )
 /* If in on-demand mode, load all cached images.  This must be fast, so
  * cache files will not be created if they don't exist; that should be done
  * by CacheImage or LoadImage on startup. */
-void ImageCache::Demand( RString sImageDir )
+void ImageCache::Demand( std::string sImageDir )
 {
 	++g_iDemandRefcount;
 	if( g_iDemandRefcount > 1 )
@@ -74,12 +74,12 @@ void ImageCache::Demand( RString sImageDir )
 
 	FOREACH_CONST_Child( &ImageData, p )
 	{
-		RString sImagePath = p->GetName();
+		std::string sImagePath = p->GetName();
 
 		if( g_ImagePathToImage.find(sImagePath) != g_ImagePathToImage.end() )
 			continue; /* already loaded */
 
-		const RString sCachePath = GetImageCachePath(sImageDir,sImagePath);
+		const std::string sCachePath = GetImageCachePath(sImageDir,sImagePath);
 		RageSurface *pImage = RageSurfaceUtils::LoadSurface( sCachePath );
 		if( pImage == nullptr )
 		{
@@ -91,7 +91,7 @@ void ImageCache::Demand( RString sImageDir )
 }
 
 /* Release images loaded on demand. */
-void ImageCache::Undemand( RString sImageDir )
+void ImageCache::Undemand( std::string sImageDir )
 {
 	--g_iDemandRefcount;
 	if( g_iDemandRefcount != 0 )
@@ -107,7 +107,7 @@ void ImageCache::Undemand( RString sImageDir )
  * the cache file if necessary.  Unlike CacheImage(), the original file will
  * not be examined unless the cached image doesn't exist, so the image will
  * not be updated if the original file changes, for efficiency. */
-void ImageCache::LoadImage( RString sImageDir, RString sImagePath )
+void ImageCache::LoadImage( std::string sImageDir, std::string sImagePath )
 {
 	if( sImagePath == "" )
 		return; // nothing to do
@@ -116,7 +116,7 @@ void ImageCache::LoadImage( RString sImageDir, RString sImagePath )
 		return;
 
 	/* Load it. */
-	const RString sCachePath = GetImageCachePath(sImageDir,sImagePath);
+	const std::string sCachePath = GetImageCachePath(sImageDir,sImagePath);
 
 	for( int tries = 0; tries < 2; ++tries )
 	{
@@ -270,12 +270,12 @@ struct ImageTexture: public RageTexture
 };
 
 /* If a image is cached, get its ID for use. */
-RageTextureID ImageCache::LoadCachedImage( RString sImageDir, RString sImagePath )
+RageTextureID ImageCache::LoadCachedImage( std::string sImageDir, std::string sImagePath )
 {
 	RageTextureID ID( GetImageCachePath(sImageDir,sImagePath) );
 
 	std::size_t Found = sImagePath.find("_blank");
-	if( sImagePath == "" || Found!=RString::npos )
+	if( sImagePath == "" || Found!=std::string::npos )
 		return ID;
 
 	//LOG->Trace( "ImageCache::LoadCachedImage(%s): %s", sImagePath.c_str(), ID.filename.c_str() );
@@ -335,7 +335,7 @@ static inline int closest( int num, int n1, int n2 )
 
 /* Create or update the image cache file as necessary.  If in preload mode,
  * load the cache file, too.  (This is done at startup.) */
-void ImageCache::CacheImage( RString sImageDir, RString sImagePath )
+void ImageCache::CacheImage( std::string sImageDir, std::string sImagePath )
 {
 	if( PREFSMAN->m_ImageCache != IMGCACHE_LOW_RES_PRELOAD &&
 	    PREFSMAN->m_ImageCache != IMGCACHE_LOW_RES_LOAD_ON_DEMAND )
@@ -345,7 +345,7 @@ void ImageCache::CacheImage( RString sImageDir, RString sImagePath )
 	if( !DoesFileExist(sImagePath) )
 		return;
 
-	const RString sCachePath = GetImageCachePath(sImageDir, sImagePath);
+	const std::string sCachePath = GetImageCachePath(sImageDir, sImagePath);
 
 	/* Check the full file hash.  If it's the loaded and identical, don't recache. */
 	if( DoesFileExist(sCachePath) )
@@ -374,9 +374,9 @@ void ImageCache::CacheImage( RString sImageDir, RString sImagePath )
 	CacheImageInternal( sImageDir, sImagePath );
 }
 
-void ImageCache::CacheImageInternal( RString sImageDir, RString sImagePath )
+void ImageCache::CacheImageInternal( std::string sImageDir, std::string sImagePath )
 {
-	RString sError;
+	std::string sError;
 	RageSurface *pImage = RageSurfaceUtils::LoadFile( sImagePath, sError );
 	if( pImage == nullptr )
 	{
@@ -437,7 +437,7 @@ void ImageCache::CacheImageInternal( RString sImageDir, RString sImagePath )
 		pImage = dst;
 	}
 
-	const RString sCachePath = GetImageCachePath(sImageDir,sImagePath);
+	const std::string sCachePath = GetImageCachePath(sImageDir,sImagePath);
 	RageSurfaceUtils::SaveSurface( pImage, sCachePath );
 
 	/* If an old image is loaded, free it. */

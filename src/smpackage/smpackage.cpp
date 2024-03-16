@@ -14,6 +14,7 @@
 #include "IniFile.h"
 #include "LocalizedString.h"
 #include "arch/Dialog/Dialog.h"
+#include "StringUtil.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -41,7 +42,7 @@ extern const char *const version_time = "";
 #include "archutils/Win32/SpecialDirs.h"
 #include "ProductInfo.h"
 #include "archutils/Win32/CommandLine.h"
-extern RString GetLastErrorString();
+extern std::string GetLastErrorString();
 
 static LocalizedString STATS_XML_NOT_YET_CREATED	( "CSmpackageApp", "The file Stats.xml has not yet been created.  It will be created once the game is run." );
 static LocalizedString FAILED_TO_OPEN			( "CSmpackageApp", "Failed to open '%s': %s" );
@@ -75,10 +76,10 @@ BOOL CSmpackageApp::InitInstance()
 
 	// TODO: Use PrefsManager to get the current language instead?  PrefsManager would 
 	// need to be split up to reduce dependencies
-	RString sTheme = SpecialFiles::BASE_THEME_NAME;
+	std::string sTheme = SpecialFiles::BASE_THEME_NAME;
 
 	{
-		RString sType = "Preferences";
+		std::string sType = "Preferences";
 		GetFileContents( SpecialFiles::TYPE_TXT_FILE, sType, true );
 		IniFile ini;
 		if( ini.ReadFile(SpecialFiles::STATIC_INI_PATH) )
@@ -94,7 +95,7 @@ BOOL CSmpackageApp::InitInstance()
 		}
 	}
 
-	RString sLanguage;
+	std::string sLanguage;
 	bool bPseudoLocalize = false;
 	bool bShowLogOutput = false;
 	bool bLogToDisk = false;
@@ -121,7 +122,7 @@ BOOL CSmpackageApp::InitInstance()
 		CString sArg = argv[i];
 		if( sArg == "--machine-profile-stats" )
 		{
-			RString sOSFile = SpecialDirs::GetAppDataDir() + PRODUCT_ID +"/Save/MachineProfile/Stats.xml";
+			std::string sOSFile = SpecialDirs::GetAppDataDir() + PRODUCT_ID +"/Save/MachineProfile/Stats.xml";
 			HINSTANCE hinst = ::ShellExecute( NULL, "open", sOSFile, "", "", SW_SHOWNORMAL );
 			// See MSDN for an explanation of this return value
 			if( (int)hinst == SE_ERR_FNF )
@@ -135,14 +136,14 @@ BOOL CSmpackageApp::InitInstance()
 	// check if there's a .smzip command line argument and install it
 	for( int i=0; i<argc; i++ )
 	{
-		RString sPath = argv[i];
+		std::string sPath = argv[i];
 		TrimLeft( sPath );
 		TrimRight( sPath );
-		RString sPathLower = sPath;
-		sPathLower.MakeLower();
+		std::string sPathLower = sPath;
+		StringUtil::MakeLower(sPathLower);
 
 		// test to see if this is a smzip file
-		if( sPathLower.Right(3).CompareNoCase("zip")==0 )
+		if( StringUtil::EndsWith(sPathLower, "zip") )
 		{
 			// We found a zip package.  Prompt the user to install it!
 			CSMPackageInstallDlg dlg( sPath );

@@ -13,9 +13,9 @@
 #include <vector>
 
 
-void NotesLoaderJson::GetApplicableFiles( const RString &sPath, std::vector<RString> &out )
+void NotesLoaderJson::GetApplicableFiles( const std::string &sPath, std::vector<std::string> &out )
 {
-	GetDirListing( sPath + RString("*.json"), out );
+	GetDirListing( sPath + std::string("*.json"), out );
 }
 
 static void Deserialize( TimingSegment *seg, const Json::Value &root )
@@ -172,10 +172,10 @@ static void Deserialize( Song &out, const Json::Value &root )
 	out.m_SongTiming.m_fBeat0OffsetInSeconds = (float)root["Offset"].asDouble();
 	out.m_fMusicSampleStartSeconds = (float)root["SampleStart"].asDouble();
 	out.m_fMusicSampleLengthSeconds = (float)root["SampleLength"].asDouble();
-	RString sSelectable = root["Selectable"].asString();
-	if( sSelectable.EqualsNoCase("YES") )
+	std::string sSelectable = root["Selectable"].asString();
+	if( StringUtil::EqualsNoCase(sSelectable, "YES") )
 		out.m_SelectionDisplay = out.SHOW_ALWAYS;
-	else if( sSelectable.EqualsNoCase("NO") )
+	else if( StringUtil::EqualsNoCase(sSelectable, "NO") )
 		out.m_SelectionDisplay = out.SHOW_NEVER;
 
 	out.m_sSongFileName = root["SongFileName"].asString();
@@ -183,7 +183,7 @@ static void Deserialize( Song &out, const Json::Value &root )
 	out.m_bHasBanner = root["HasBanner"].asBool();
 	out.m_fMusicLengthSeconds = (float)root["MusicLengthSeconds"].asDouble();
 
-	RString sDisplayBPMType = root["DisplayBpmType"].asString();
+	std::string sDisplayBPMType = root["DisplayBpmType"].asString();
 	if( sDisplayBPMType == "*" )
 		out.m_DisplayBPMType = DISPLAY_BPM_RANDOM;
 	else
@@ -223,7 +223,7 @@ static void Deserialize( Song &out, const Json::Value &root )
 	}
 }
 
-bool NotesLoaderJson::LoadFromJsonFile( const RString &sPath, Song &out )
+bool NotesLoaderJson::LoadFromJsonFile( const std::string &sPath, Song &out )
 {
 	Json::Value root;
 	if( !JsonUtil::LoadFromFileShowErrors(root,sPath) )
@@ -234,7 +234,7 @@ bool NotesLoaderJson::LoadFromJsonFile( const RString &sPath, Song &out )
 	return true;
 }
 
-bool NotesLoaderJson::LoadFromDir( const RString &sPath, Song &out )
+bool NotesLoaderJson::LoadFromDir( const std::string &sPath, Song &out )
 {
 	return LoadFromJsonFile(sPath, out);
 }

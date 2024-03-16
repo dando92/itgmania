@@ -4,6 +4,7 @@
 #include "RageLog.h"
 #include "InputEventPlus.h"
 #include "InputMapper.h"
+#include "StringUtil.h"
 
 #include <vector>
 
@@ -163,15 +164,15 @@ bool InputQueueCode::EnteredCode( GameController controller ) const
 	return false;
 }
 
-bool InputQueueCode::Load( RString sButtonsNames )
+bool InputQueueCode::Load( std::string sButtonsNames )
 {
 	m_aPresses.clear();
 
-	std::vector<RString> asPresses;
+	std::vector<std::string> asPresses;
 	split( sButtonsNames, ",", asPresses, false );
-	for (RString &sPress : asPresses)
+	for (std::string &sPress : asPresses)
 	{
-		std::vector<RString> asButtonNames;
+		std::vector<std::string> asButtonNames;
 
 		split( sPress, "-", asButtonNames, false );
 
@@ -183,29 +184,29 @@ bool InputQueueCode::Load( RString sButtonsNames )
 		}
 
 		m_aPresses.push_back( ButtonPress() );
-		for (RString sButtonName : asButtonNames)	// for each button in this code
+		for (std::string sButtonName : asButtonNames)	// for each button in this code
 		{
 			bool bHold = false;
 			bool bNotHold = false;
 			for(;;)
 			{
-				if( sButtonName.Left(1) == "+" )
+				if( StringUtil::StartsWith(sButtonName, "+") )
 				{
 					m_aPresses.back().m_InputTypes[IET_REPEAT] = true;
 					sButtonName.erase(0, 1);
 				}
-				else if( sButtonName.Left(1) == "~" )
+				else if( StringUtil::StartsWith(sButtonName, "~") )
 				{
 					m_aPresses.back().m_InputTypes[IET_FIRST_PRESS] = false;
 					m_aPresses.back().m_InputTypes[IET_RELEASE] = true;
 					sButtonName.erase(0, 1);
 				}
-				else if( sButtonName.Left(1) == "@" )
+				else if( StringUtil::StartsWith(sButtonName, "@") )
 				{
 					sButtonName.erase(0, 1);
 					bHold = true;
 				}
-				else if( sButtonName.Left(1) == "!" )
+				else if( StringUtil::StartsWith(sButtonName, "!") )
 				{
 					sButtonName.erase(0, 1);
 					bNotHold = true;

@@ -34,7 +34,7 @@ public:
 class RageMovieTextureDriver_FFMpeg: public RageMovieTextureDriver
 {
 public:
-	virtual RageMovieTexture *Create( RageTextureID ID, RString &sError );
+	virtual RageMovieTexture *Create( RageTextureID ID, std::string &sError );
 	static RageSurface *AVCodecCreateCompatibleSurface( int iTextureWidth, int iTextureHeight, bool bPreferHighColor, int &iAVTexfmt, MovieDecoderPixelFormatYCbCr &fmtout );
 };
 
@@ -44,7 +44,7 @@ public:
 	MovieDecoder_FFMpeg();
 	~MovieDecoder_FFMpeg();
 
-	RString Open( RString sFile );
+	std::string Open( std::string sFile );
 	void Close();
 	void Rewind();
 
@@ -61,7 +61,7 @@ public:
 
 private:
 	void Init();
-	RString OpenCodec();
+	std::string OpenCodec();
 	int ReadPacket();
 	int DecodePacket( float fTargetTime );
 

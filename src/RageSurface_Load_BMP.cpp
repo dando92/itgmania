@@ -27,7 +27,7 @@ enum
 	return RageSurfaceUtils::OPEN_FATAL_ERROR; \
 }
 
-static RageSurfaceUtils::OpenResult LoadBMP( RageFile &f, RageSurface *&img, RString &sError )
+static RageSurfaceUtils::OpenResult LoadBMP( RageFile &f, RageSurface *&img, std::string &sError )
 {
 	char magic[2];
 	ReadBytes( f, magic, 2, sError );
@@ -158,7 +158,7 @@ static RageSurfaceUtils::OpenResult LoadBMP( RageFile &f, RageSurface *&img, RSt
 	for( int y = (int) iHeight-1; y >= 0; --y )
 	{
 		std::uint8_t *pRow = img->pixels + img->pitch*y;
-		RString buf;
+		std::string buf;
 
 		f.Read( buf, iFilePitch );
 
@@ -190,7 +190,7 @@ static RageSurfaceUtils::OpenResult LoadBMP( RageFile &f, RageSurface *&img, RSt
 	return sError.size() != 0? RageSurfaceUtils::OPEN_FATAL_ERROR: RageSurfaceUtils::OPEN_OK;
 }
 
-RageSurfaceUtils::OpenResult RageSurface_Load_BMP( const RString &sPath, RageSurface *&img, bool bHeaderOnly, RString &error )
+RageSurfaceUtils::OpenResult RageSurface_Load_BMP( const std::string &sPath, RageSurface *&img, bool bHeaderOnly, std::string &error )
 {
 	RageFile f;
 

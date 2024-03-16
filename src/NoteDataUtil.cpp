@@ -59,7 +59,7 @@ NoteType NoteDataUtil::GetSmallestNoteTypeInRange( const NoteData &n, int iStart
 	return NoteType_Invalid;	// well-formed notes created in the editor should never get here
 }
 
-static void LoadFromSMNoteDataStringWithPlayer( NoteData& out, const RString &sSMNoteData, int start,
+static void LoadFromSMNoteDataStringWithPlayer( NoteData& out, const std::string &sSMNoteData, int start,
 						int len, PlayerNumber pn, int iNumTracks )
 {
 	/* Don't allocate memory for the entire string, nor per measure. Instead, use the in-place
@@ -91,7 +91,7 @@ static void LoadFromSMNoteDataStringWithPlayer( NoteData& out, const RString &sS
 			{
 				break;
 			}
-			//RString &line = sSMNoteData.substr( measureLineStart, measureLineSize );
+			//std::string &line = sSMNoteData.substr( measureLineStart, measureLineSize );
 			const char *beginLine = sSMNoteData.data() + measureLineStart;
 			const char *endLine = beginLine + measureLineSize;
 
@@ -272,22 +272,22 @@ static void LoadFromSMNoteDataStringWithPlayer( NoteData& out, const RString &sS
 	out.RevalidateATIs(std::vector<int>(), false);
 }
 
-void NoteDataUtil::LoadFromSMNoteDataString( NoteData &out, const RString &sSMNoteData_, bool bComposite )
+void NoteDataUtil::LoadFromSMNoteDataString( NoteData &out, const std::string &sSMNoteData_, bool bComposite )
 {
 	// Load note data
-	RString sSMNoteData;
-	RString::size_type iIndexCommentStart = 0;
-	RString::size_type iIndexCommentEnd = 0;
-	RString::size_type origSize = sSMNoteData_.size();
+	std::string sSMNoteData;
+	std::string::size_type iIndexCommentStart = 0;
+	std::string::size_type iIndexCommentEnd = 0;
+	std::string::size_type origSize = sSMNoteData_.size();
 	const char *p = sSMNoteData_.data();
 
 	sSMNoteData.reserve( origSize );
-	while( (iIndexCommentStart = sSMNoteData_.find("//", iIndexCommentEnd)) != RString::npos )
+	while( (iIndexCommentStart = sSMNoteData_.find("//", iIndexCommentEnd)) != std::string::npos )
 	{
 		sSMNoteData.append( p, iIndexCommentStart - iIndexCommentEnd );
 		p += iIndexCommentStart - iIndexCommentEnd;
 		iIndexCommentEnd = sSMNoteData_.find( "\n", iIndexCommentStart );
-		iIndexCommentEnd = (iIndexCommentEnd == RString::npos ? origSize : iIndexCommentEnd+1);
+		iIndexCommentEnd = (iIndexCommentEnd == std::string::npos ? origSize : iIndexCommentEnd+1);
 		p += iIndexCommentEnd - iIndexCommentStart;
 	}
 	sSMNoteData.append( p, origSize - iIndexCommentEnd );
@@ -348,7 +348,7 @@ void NoteDataUtil::InsertHoldTails( NoteData &inout )
 	}
 }
 
-void NoteDataUtil::GetSMNoteDataString( const NoteData &in, RString &sRet )
+void NoteDataUtil::GetSMNoteDataString( const NoteData &in, std::string &sRet )
 {
 	// Get note data
 	std::vector<NoteData> parts;
@@ -2125,7 +2125,7 @@ static void HyperShuffleNotes( NoteData &inout, int iStartIndex, int iEndIndex)
 			if( current_tn.type == TapNoteType_HoldHead )
 			{
 				ASSERT_M(viHoldEndRows[targetTrack] == -1,
-					ssprintf("Tried to insert a hold into another hold (row %d, track %d)", r, targetTrack));
+					ssprintf("Tried to insert a hold into another hold (row %d, track %d)", r, targetTrack).c_str());
 				iFreeTracks--;
 				viHoldEndRows[targetTrack] = r + current_tn.iDuration;
 			}

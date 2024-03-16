@@ -40,14 +40,14 @@ const char *g_CRSDifficultyNames[] =
 // Then, put the escaped characters back, by replacing "||escaped-delim||" with "\\" + sDelimitor
 // And finally, split the string by instances of "||regular-delim||"
 // So for instance, "Thing 1, Thing\,2" becomes "Thing 1||regular-delim||Thing \, 2"
-void split_minding_escaped_delims(const RString &sSource, const RString &sDelimitor, std::vector<RString>& asAddit)
+void split_minding_escaped_delims(const std::string &sSource, const std::string &sDelimitor, std::vector<std::string>& asAddit)
 {
-	RString sourceCopy = sSource;
-	RString escaped_delim = "||escaped-delim||";
-	RString regular_delim = "||regular-delim||";
-	sourceCopy.Replace("\\" + sDelimitor, escaped_delim);
-	sourceCopy.Replace(sDelimitor, regular_delim);
-	sourceCopy.Replace(escaped_delim, "\\" + sDelimitor);
+	std::string sourceCopy = sSource;
+	std::string escaped_delim = "||escaped-delim||";
+	std::string regular_delim = "||regular-delim||";
+	StringUtil::Replace(sourceCopy, "\\" + sDelimitor, escaped_delim);
+	StringUtil::Replace(sourceCopy, sDelimitor, regular_delim);
+	StringUtil::Replace(sourceCopy, escaped_delim, "\\" + sDelimitor);
 	split(sourceCopy, regular_delim, asAddit);
 }
 
@@ -56,65 +56,65 @@ void split_minding_escaped_delims(const RString &sSource, const RString &sDelimi
  * @param s the name of the difficulty.
  * @return the course difficulty.
  */
-static CourseDifficulty CRSStringToDifficulty( const RString& s )
+static CourseDifficulty CRSStringToDifficulty( const std::string& s )
 {
 	FOREACH_ENUM( Difficulty,i)
-		if( !s.CompareNoCase(g_CRSDifficultyNames[i]) )
+		if( StringUtil::EqualsNoCase(s, g_CRSDifficultyNames[i]) )
 			return i;
 	return Difficulty_Invalid;
 }
 
 
-bool CourseLoaderCRS::LoadFromBuffer( const RString &sPath, const RString &sBuffer, Course &out )
+bool CourseLoaderCRS::LoadFromBuffer( const std::string &sPath, const std::string &sBuffer, Course &out )
 {
 	MsdFile msd;
 	msd.ReadFromString( sBuffer, false );  // don't unescape here, it gets handled later
 	return LoadFromMsd( sPath, msd, out, true );
 }
 
-bool CourseLoaderCRS::LoadFromMsd( const RString &sPath, const MsdFile &msd, Course &out, bool bFromCache )
+bool CourseLoaderCRS::LoadFromMsd( const std::string &sPath, const MsdFile &msd, Course &out, bool bFromCache )
 {
 	AttackArray attacks;
 	float fGainSeconds = 0;
 	for( unsigned i=0; i<msd.GetNumValues(); i++ )
 	{
-		RString sValueName = msd.GetParam(i, 0);
+		std::string sValueName = msd.GetParam(i, 0);
 		const MsdFile::value_t &sParams = msd.GetValue(i);
 
 		// handle the data
-		if( sValueName.EqualsNoCase("COURSE") )
+		if( StringUtil::EqualsNoCase(sValueName, "COURSE") )
 			out.m_sMainTitle = sParams[1];
-		else if( sValueName.EqualsNoCase("COURSETRANSLIT") )
+		else if( StringUtil::EqualsNoCase(sValueName, "COURSETRANSLIT") )
 			out.m_sMainTitleTranslit = sParams[1];
-		else if( sValueName.EqualsNoCase("SCRIPTER") )
+		else if( StringUtil::EqualsNoCase(sValueName, "SCRIPTER") )
 			out.m_sScripter = sParams[1];
-		else if( sValueName.EqualsNoCase("DESCRIPTION") )
+		else if( StringUtil::EqualsNoCase(sValueName, "DESCRIPTION") )
 			out.m_sDescription = sParams[1];
-		else if( sValueName.EqualsNoCase("REPEAT") )
+		else if( StringUtil::EqualsNoCase(sValueName, "REPEAT") )
 		{
-			RString str = sParams[1];
-			str.MakeLower();
+			std::string str = sParams[1];
+			StringUtil::MakeLower(str);
 			if( str.find("yes") != std::string::npos )
 				out.m_bRepeat = true;
 		}
 
-		else if( sValueName.EqualsNoCase("BANNER") )
+		else if( StringUtil::EqualsNoCase(sValueName, "BANNER") )
 		{
 			out.m_sBannerPath = sParams[1];
 		}
-		else if( sValueName.EqualsNoCase("BACKGROUND") )
+		else if( StringUtil::EqualsNoCase(sValueName, "BACKGROUND") )
 		{
 			out.m_sBackgroundPath = sParams[1];
 		}
-		else if( sValueName.EqualsNoCase("LIVES") )
+		else if( StringUtil::EqualsNoCase(sValueName, "LIVES") )
 		{
 			out.m_iLives = std::max( StringToInt(sParams[1]), 0 );
 		}
-		else if( sValueName.EqualsNoCase("GAINSECONDS") )
+		else if( StringUtil::EqualsNoCase(sValueName, "GAINSECONDS") )
 		{
 			fGainSeconds = StringToFloat( sParams[1] );
 		}
-		else if( sValueName.EqualsNoCase("METER") )
+		else if( StringUtil::EqualsNoCase(sValueName, "METER") )
 		{
 			if( sParams.params.size() == 2 )
 			{
@@ -132,11 +132,11 @@ bool CourseLoaderCRS::LoadFromMsd( const RString &sPath, const MsdFile &msd, Cou
 			}
 		}
 
-		else if( sValueName.EqualsNoCase("MODS") )
+		else if( StringUtil::EqualsNoCase(sValueName, "MODS") )
 		{
 			CourseLoaderCRS::ParseCourseMods(sParams, attacks, sPath);
 		}
-		else if( sValueName.EqualsNoCase("SONG") )
+		else if( StringUtil::EqualsNoCase(sValueName, "SONG") )
 		{
 			CourseEntry new_entry;
 			if(CourseLoaderCRS::ParseCourseSong(sParams, new_entry, sPath) == false) {
@@ -149,7 +149,7 @@ bool CourseLoaderCRS::LoadFromMsd( const RString &sPath, const MsdFile &msd, Cou
 			attacks.clear();
 			out.m_vEntries.push_back( new_entry );
 		}
-		else if( sValueName.EqualsNoCase("SONGSELECT") )
+		else if( StringUtil::EqualsNoCase(sValueName, "SONGSELECT") )
 		{
 			CourseEntry new_entry;
 			new_entry.bUseSongSelect = true;
@@ -163,13 +163,13 @@ bool CourseLoaderCRS::LoadFromMsd( const RString &sPath, const MsdFile &msd, Cou
 			attacks.clear();
 			out.m_vEntries.push_back( new_entry );
 		}
-		else if( !sValueName.EqualsNoCase("DISPLAYCOURSE") || !sValueName.EqualsNoCase("COMBO") ||
-			 !sValueName.EqualsNoCase("COMBOMODE") )
+		else if( !StringUtil::EqualsNoCase(sValueName, "DISPLAYCOURSE") || !StringUtil::EqualsNoCase(sValueName, "COMBO") ||
+			 !StringUtil::EqualsNoCase(sValueName, "COMBOMODE") )
 		{
 			// Ignore
 		}
 
-		else if( bFromCache && !sValueName.EqualsNoCase("RADAR") )
+		else if( bFromCache && !StringUtil::EqualsNoCase(sValueName, "RADAR") )
 		{
 			StepsType st = (StepsType) StringToInt(sParams[1]);
 			CourseDifficulty cd = (CourseDifficulty) StringToInt( sParams[2] );
@@ -178,12 +178,12 @@ bool CourseLoaderCRS::LoadFromMsd( const RString &sPath, const MsdFile &msd, Cou
 			rv.FromString( sParams[3] );
 			out.m_RadarCache[Course::CacheEntry(st, cd)] = rv;
 		}
-		else if( sValueName.EqualsNoCase("STYLE") )
+		else if( StringUtil::EqualsNoCase(sValueName, "STYLE") )
 		{
-			RString sStyles = sParams[1];
-			std::vector<RString> asStyles;
+			std::string sStyles = sParams[1];
+			std::vector<std::string> asStyles;
 			split( sStyles, ",", asStyles );
-			for (RString const &s : asStyles)
+			for (std::string const &s : asStyles)
 				out.m_setStyles.insert( s );
 
 		}
@@ -195,9 +195,9 @@ bool CourseLoaderCRS::LoadFromMsd( const RString &sPath, const MsdFile &msd, Cou
 
 	if( out.m_sBannerPath.empty() )
 	{
-		const RString sFName = SetExtension( out.m_sPath, "" );
+		const std::string sFName = SetExtension( out.m_sPath, "" );
 
-		std::vector<RString> arrayPossibleBanners;
+		std::vector<std::string> arrayPossibleBanners;
 		GetDirListing( sFName + "*.png", arrayPossibleBanners, false, false );
 		GetDirListing( sFName + "*.jpg", arrayPossibleBanners, false, false );
 		GetDirListing( sFName + "*.jpeg", arrayPossibleBanners, false, false );
@@ -231,9 +231,9 @@ bool CourseLoaderCRS::LoadFromMsd( const RString &sPath, const MsdFile &msd, Cou
 	return true;
 }
 
-bool CourseLoaderCRS::LoadFromCRSFile( const RString &_sPath, Course &out )
+bool CourseLoaderCRS::LoadFromCRSFile( const std::string &_sPath, Course &out )
 {
-	RString sPath = _sPath;
+	std::string sPath = _sPath;
 
 	out.Init();
 
@@ -241,7 +241,7 @@ bool CourseLoaderCRS::LoadFromCRSFile( const RString &_sPath, Course &out )
 
 	// save group name
 	{
-		std::vector<RString> parts;
+		std::vector<std::string> parts;
 		split( sPath, "/", parts, false );
 		if( parts.size() >= 4 ) // e.g. "/Courses/blah/fun.crs"
 			out.m_sGroupName = parts[parts.size()-2];
@@ -263,7 +263,7 @@ bool CourseLoaderCRS::LoadFromCRSFile( const RString &_sPath, Course &out )
 
 	if( bUseCache )
 	{
-		RString sCacheFile = out.GetCacheFilePath();
+		std::string sCacheFile = out.GetCacheFilePath();
 		LOG->Trace( "CourseLoaderCRS::LoadFromCRSFile(\"%s\") (\"%s\")", sPath.c_str(), sCacheFile.c_str() );
 		sPath = sCacheFile;
 	}
@@ -287,7 +287,7 @@ bool CourseLoaderCRS::LoadFromCRSFile( const RString &_sPath, Course &out )
 		// If we have any cache data, write the cache file.
 		if( out.m_RadarCache.size() )
 		{
-			RString sCachePath = out.GetCacheFilePath();
+			std::string sCachePath = out.GetCacheFilePath();
 			if( CourseWriterCRS::Write(out, sCachePath, true) )
 				SONGINDEX->AddCacheIndex( out.m_sPath, GetHashForFile(out.m_sPath) );
 		}
@@ -296,7 +296,7 @@ bool CourseLoaderCRS::LoadFromCRSFile( const RString &_sPath, Course &out )
 	return true;
 }
 
-bool CourseLoaderCRS::LoadEditFromFile( const RString &sEditFilePath, ProfileSlot slot )
+bool CourseLoaderCRS::LoadEditFromFile( const std::string &sEditFilePath, ProfileSlot slot )
 {
 	LOG->Trace( "CourseLoaderCRS::LoadEdit(%s)", sEditFilePath.c_str() );
 
@@ -324,7 +324,7 @@ bool CourseLoaderCRS::LoadEditFromFile( const RString &sEditFilePath, ProfileSlo
 	return true;
 }
 
-bool CourseLoaderCRS::LoadEditFromBuffer( const RString &sBuffer, const RString &sPath, ProfileSlot slot )
+bool CourseLoaderCRS::LoadEditFromBuffer( const std::string &sBuffer, const std::string &sPath, ProfileSlot slot )
 {
 	Course *pCourse = new Course;
 	if( !LoadFromBuffer(sPath, sBuffer, *pCourse) )
@@ -339,25 +339,25 @@ bool CourseLoaderCRS::LoadEditFromBuffer( const RString &sBuffer, const RString 
 	return true;
 }
 
-bool CourseLoaderCRS::ParseCourseMods( const MsdFile::value_t &sParams, AttackArray &attacks, const RString &sPath )  
+bool CourseLoaderCRS::ParseCourseMods( const MsdFile::value_t &sParams, AttackArray &attacks, const std::string &sPath )
 {
 	Attack attack;
 	float end = -9999;
 	for( unsigned j = 1; j < sParams.params.size(); ++j )
 	{
-		std::vector<RString> sBits;
+		std::vector<std::string> sBits;
 		split( sParams[j], "=", sBits, false );
 		if( sBits.size() < 2 )
 			continue;
 
 		Trim( sBits[0] );
-		if( !sBits[0].CompareNoCase("TIME") )
+		if( StringUtil::EqualsNoCase(sBits[0], "TIME") )
 			attack.fStartSecond = std::max( StringToFloat(sBits[1]), 0.0f );
-		else if( !sBits[0].CompareNoCase("LEN") )
+		else if( StringUtil::EqualsNoCase(sBits[0], "LEN") )
 			attack.fSecsRemaining = StringToFloat( sBits[1] );
-		else if( !sBits[0].CompareNoCase("END") )
+		else if( StringUtil::EqualsNoCase(sBits[0], "END") )
 			end = StringToFloat( sBits[1] );
-		else if( !sBits[0].CompareNoCase("MODS") )
+		else if( StringUtil::EqualsNoCase(sBits[0], "MODS") )
 		{
 			attack.sModifiers = sBits[1];
 
@@ -386,16 +386,16 @@ bool CourseLoaderCRS::ParseCourseMods( const MsdFile::value_t &sParams, AttackAr
 	return true;
 }
 
-bool CourseLoaderCRS::ParseCourseSong( const MsdFile::value_t &sParams, CourseEntry &new_entry, const RString &sPath ) 
+bool CourseLoaderCRS::ParseCourseSong( const MsdFile::value_t &sParams, CourseEntry &new_entry, const std::string &sPath )
 {
 	// infer entry::Type from the first param
 	// todo: make sure these aren't generating bogus entries due
 	// to a lack of songs. -aj
 	int iNumSongs = SONGMAN->GetNumSongs();
 	// most played
-	if( sParams[1].Left(strlen("BEST")) == "BEST" )
+	if( StringUtil::StartsWith(sParams[1], "BEST") )
 	{
-		int iChooseIndex = StringToInt( sParams[1].Right(sParams[1].size()-strlen("BEST")) ) - 1;
+		int iChooseIndex = StringToInt( sParams[1].substr(strlen("BEST")) ) - 1;
 		if( iChooseIndex > iNumSongs )
 		{
 			// looking up a song that doesn't exist.
@@ -409,9 +409,9 @@ bool CourseLoaderCRS::ParseCourseSong( const MsdFile::value_t &sParams, CourseEn
 		new_entry.songSort = SongSort_MostPlays;
 	}
 	// least played
-	else if( sParams[1].Left(strlen("WORST")) == "WORST" )
+	else if( StringUtil::StartsWith(sParams[1], "WORST") )
 	{
-		int iChooseIndex = StringToInt( sParams[1].Right(sParams[1].size()-strlen("WORST")) ) - 1;
+		int iChooseIndex = StringToInt( sParams[1].substr(strlen("WORST")) ) - 1;
 		if( iChooseIndex > iNumSongs )
 		{
 			// looking up a song that doesn't exist.
@@ -425,16 +425,16 @@ bool CourseLoaderCRS::ParseCourseSong( const MsdFile::value_t &sParams, CourseEn
 		new_entry.songSort = SongSort_FewestPlays;
 	}
 	// best grades
-	else if( sParams[1].Left(strlen("GRADEBEST")) == "GRADEBEST" )
+	else if( StringUtil::StartsWith(sParams[1], "GRADEBEST") )
 	{
-		new_entry.iChooseIndex = StringToInt( sParams[1].Right(sParams[1].size()-strlen("GRADEBEST")) ) - 1;
+		new_entry.iChooseIndex = StringToInt( sParams[1].substr(strlen("GRADEBEST")) ) - 1;
 		CLAMP( new_entry.iChooseIndex, 0, 500 );
 		new_entry.songSort = SongSort_TopGrades;
 	}
 	// worst grades
-	else if( sParams[1].Left(strlen("GRADEWORST")) == "GRADEWORST" )
+	else if( StringUtil::StartsWith(sParams[1], "GRADEWORST") )
 	{
-		new_entry.iChooseIndex = StringToInt( sParams[1].Right(sParams[1].size()-strlen("GRADEWORST")) ) - 1;
+		new_entry.iChooseIndex = StringToInt( sParams[1].substr(strlen("GRADEWORST")) ) - 1;
 		CLAMP( new_entry.iChooseIndex, 0, 500 );
 		new_entry.songSort = SongSort_LowestGrades;
 	}
@@ -443,12 +443,12 @@ bool CourseLoaderCRS::ParseCourseSong( const MsdFile::value_t &sParams, CourseEn
 		new_entry.bSecret = true;
 	}
 	// group random
-	else if( sParams[1].Right(1) == "*" )
+	else if( StringUtil::EndsWith(sParams[1], "*") )
 	{
 		new_entry.bSecret = true;
-		RString sSong = sParams[1];
-		sSong.Replace( "\\", "/" );
-		std::vector<RString> bits;
+		std::string sSong = sParams[1];
+		StringUtil::Replace(sSong, '\\', '/');
+		std::vector<std::string> bits;
 		split( sSong, "/", bits );
 		if( bits.size() == 2 )
 		{
@@ -469,9 +469,9 @@ bool CourseLoaderCRS::ParseCourseSong( const MsdFile::value_t &sParams, CourseEn
 	}
 	else
 	{
-		RString sSong = sParams[1];
-		sSong.Replace( "\\", "/" );
-		std::vector<RString> bits;
+		std::string sSong = sParams[1];
+		StringUtil::Replace(sSong, '\\', '/');
+		std::vector<std::string> bits;
 		split( sSong, "/", bits );
 
 		Song *pSong = nullptr;
@@ -503,7 +503,7 @@ bool CourseLoaderCRS::ParseCourseSong( const MsdFile::value_t &sParams, CourseEn
 
 	if( new_entry.stepsCriteria.m_difficulty == Difficulty_Invalid )
 	{
-		int retval = sscanf( sParams[2], "%d..%d", &new_entry.stepsCriteria.m_iLowMeter, &new_entry.stepsCriteria.m_iHighMeter );
+		int retval = sscanf( sParams[2].c_str(), "%d..%d", &new_entry.stepsCriteria.m_iLowMeter, &new_entry.stepsCriteria.m_iHighMeter );
 		if( retval == 1 )
 			new_entry.stepsCriteria.m_iHighMeter = new_entry.stepsCriteria.m_iLowMeter;
 		else if( retval != 2 )
@@ -520,20 +520,20 @@ bool CourseLoaderCRS::ParseCourseSong( const MsdFile::value_t &sParams, CourseEn
 	{
 		// If "showcourse" or "noshowcourse" is in the list, force
 		// new_entry.secret on or off.
-		std::vector<RString> mods;
+		std::vector<std::string> mods;
 		split( sParams[3], ",", mods, true );
 		for( int j = (int) mods.size()-1; j >= 0 ; --j )
 		{
-			RString &sMod = mods[j];
+			std::string &sMod = mods[j];
 			TrimLeft( sMod );
 			TrimRight( sMod );
-			if( !sMod.CompareNoCase("showcourse") )
+			if( StringUtil::EqualsNoCase(sMod, "showcourse") )
 				new_entry.bSecret = false;
-			else if( !sMod.CompareNoCase("noshowcourse") )
+			else if( StringUtil::EqualsNoCase(sMod, "noshowcourse") )
 				new_entry.bSecret = true;
-			else if( !sMod.CompareNoCase("nodifficult") )
+			else if( StringUtil::EqualsNoCase(sMod, "nodifficult") )
 				new_entry.bNoDifficult = true;
-			else if( sMod.length() > 5 && !sMod.Left(5).CompareNoCase("award") )
+			else if( sMod.length() > 5 && StringUtil::EqualsNoCase(sMod.substr(0, 5), "award") )
 				new_entry.iGainLives = StringToInt( sMod.substr(5) );
 			else
 				continue;
@@ -544,12 +544,12 @@ bool CourseLoaderCRS::ParseCourseSong( const MsdFile::value_t &sParams, CourseEn
 	return true;
 }
 
-bool CourseLoaderCRS::ParseCourseSongSelect(const MsdFile::value_t &sParams, CourseEntry &new_entry, const RString &sPath)
+bool CourseLoaderCRS::ParseCourseSongSelect(const MsdFile::value_t &sParams, CourseEntry &new_entry, const std::string &sPath)
 {
 	
 	for( unsigned i = 1; i < sParams.params.size(); ++i )
 	{
-		std::vector<RString> sParamParts;
+		std::vector<std::string> sParamParts;
 		split_minding_escaped_delims(sParams[i], "=", sParamParts);
 
 		if( sParamParts.size() != 2 )
@@ -557,34 +557,34 @@ bool CourseLoaderCRS::ParseCourseSongSelect(const MsdFile::value_t &sParams, Cou
 			LOG->UserLog( "Course file", sPath, "has an invalid SONGSELECT sub-parameter, \"%s\"", sParams[i].c_str());
 			return false;
 		}
-		RString sParamName = sParamParts[0];
-		RString sParamValue = sParamParts[1];
+		std::string sParamName = sParamParts[0];
+		std::string sParamValue = sParamParts[1];
 
 		// For params that accept multiple items, if someone were to define it twice in one #SONGSELECT, 
 		// should we overwrite the first, or append? Currently, it just appends it all together.
 
-		if( sParamName.EqualsNoCase("TITLE") )
+		if( StringUtil::EqualsNoCase(sParamName, "TITLE") )
 		{
 			if(ParseCommaSeparatedList(sParamValue, new_entry.songCriteria.m_vsSongNames, sParamName, sPath) == false)
 			{
 				return false;
 			}
 		}
-		else if( sParamName.EqualsNoCase("GROUP") )
+		else if( StringUtil::EqualsNoCase(sParamName, "GROUP") )
 		{
 			if(ParseCommaSeparatedList(sParamValue, new_entry.songCriteria.m_vsGroupNames, sParamName, sPath) == false)
 			{
 				return false;
 			}
 		}
-		else if( sParamName.EqualsNoCase("ARTIST") )
+		else if( StringUtil::EqualsNoCase(sParamName, "ARTIST") )
 		{
 			if(ParseCommaSeparatedList(sParamValue, new_entry.songCriteria.m_vsArtistNames, sParamName, sPath) == false)
 			{
 				return false;
 			}
 		}
-		else if( sParamName.EqualsNoCase("GENRE") )
+		else if( StringUtil::EqualsNoCase(sParamName, "GENRE") )
 		{
 			if(ParseCommaSeparatedList(sParamValue, new_entry.songCriteria.m_vsSongGenreAllowedList, sParamName, sPath) == false)
 			{
@@ -592,9 +592,9 @@ bool CourseLoaderCRS::ParseCourseSongSelect(const MsdFile::value_t &sParams, Cou
 			}
 			new_entry.songCriteria.m_bUseSongGenreAllowedList = true;
 		}
-		else if( sParamName.EqualsNoCase("DIFFICULTY") )
+		else if( StringUtil::EqualsNoCase(sParamName, "DIFFICULTY") )
 		{
-			std::vector<RString> difficultyStrs;
+			std::vector<std::string> difficultyStrs;
 			std::vector<Difficulty> difficulties;
 			split(sParamValue, ",", difficultyStrs);
 			for (unsigned d = 0; d < difficultyStrs.size(); d++)
@@ -616,9 +616,9 @@ bool CourseLoaderCRS::ParseCourseSongSelect(const MsdFile::value_t &sParams, Cou
 			}
 			new_entry.stepsCriteria.m_vDifficulties.insert(new_entry.stepsCriteria.m_vDifficulties.end(), difficulties.begin(), difficulties.end());
 		}
-		else if( sParamName.EqualsNoCase("SORT") )
+		else if( StringUtil::EqualsNoCase(sParamName, "SORT") )
 		{
-			std::vector<RString> sortParams;
+			std::vector<std::string> sortParams;
 			split(sParamValue, ",", sortParams);
 			if( sortParams.size() != 2 )
 			{
@@ -643,49 +643,49 @@ bool CourseLoaderCRS::ParseCourseSongSelect(const MsdFile::value_t &sParams, Cou
 				return false;
 			}
 		}
-		else if( sParamName.EqualsNoCase("DURATION") )
+		else if( StringUtil::EqualsNoCase(sParamName, "DURATION") )
 		{
 			if(ParseRangedValue(sParamValue, new_entry.songCriteria.m_fMinDurationSeconds, new_entry.songCriteria.m_fMaxDurationSeconds, sParamName, sPath) == false)
 			{
 				return false;
 			}
 		}
-		else if( sParamName.EqualsNoCase("BPMRANGE") )
+		else if( StringUtil::EqualsNoCase(sParamName, "BPMRANGE") )
 		{
 			if(ParseRangedValue(sParamValue, new_entry.songCriteria.m_fMinBPM, new_entry.songCriteria.m_fMaxBPM, sParamName, sPath) == false)
 			{
 				return false;
 			}
 		}
-		else if( sParamName.EqualsNoCase("METER") )
+		else if( StringUtil::EqualsNoCase(sParamName, "METER") )
 		{
 			if(ParseRangedValue(sParamValue, new_entry.stepsCriteria.m_iLowMeter, new_entry.stepsCriteria.m_iHighMeter, sParamName, sPath) == false)
 			{
 				return false;
 			}
 		}
-		else if( sParamName.EqualsNoCase("GAINLIVES") )
+		else if( StringUtil::EqualsNoCase(sParamName, "GAINLIVES") )
 		{
 			new_entry.iGainLives = StringToInt(sParamValue);
 		}
-		else if( sParamName.EqualsNoCase("GAINSECONDS") )
+		else if( StringUtil::EqualsNoCase(sParamName, "GAINSECONDS") )
 		{
 			new_entry.fGainSeconds = StringToInt(sParamValue);
 		}
-		else if( sParamName.EqualsNoCase("MODS") )
+		else if( StringUtil::EqualsNoCase(sParamName, "MODS") )
 		{
-			std::vector<RString> mods;
+			std::vector<std::string> mods;
 			split( sParamValue, ",", mods, true );
 			for( int j = (int) mods.size()-1; j >= 0 ; --j )
 			{
-				RString &sMod = mods[j];
+				std::string &sMod = mods[j];
 				TrimLeft( sMod );
 				TrimRight( sMod );
-				if( !sMod.CompareNoCase("showcourse") )
+				if( StringUtil::EqualsNoCase(sMod, "showcourse") )
 					new_entry.bSecret = false;
-				else if( !sMod.CompareNoCase("noshowcourse") )
+				else if( StringUtil::EqualsNoCase(sMod, "noshowcourse") )
 					new_entry.bSecret = true;
-				else if( !sMod.CompareNoCase("nodifficult") )
+				else if( StringUtil::EqualsNoCase(sMod, "nodifficult") )
 					new_entry.bNoDifficult = true;
 				else
 					continue;
@@ -701,11 +701,11 @@ bool CourseLoaderCRS::ParseCourseSongSelect(const MsdFile::value_t &sParams, Cou
 	return true;
 }
 
-bool CourseLoaderCRS::ParseCommaSeparatedList(const RString &sParamValue, std::vector<RString> &dest, const RString &sParamName, const RString &sPath)
+bool CourseLoaderCRS::ParseCommaSeparatedList(const std::string &sParamValue, std::vector<std::string> &dest, const std::string &sParamName, const std::string &sPath)
 {
-	std::vector<RString> items;
+	std::vector<std::string> items;
 	//...and here is where the string unescaping gets handled
-	RString unescapedParamValue = sParamValue;
+	std::string unescapedParamValue = sParamValue;
 
 	split_minding_escaped_delims(sParamValue, ",", items);
 	if(items.size() == 0)
@@ -723,9 +723,9 @@ bool CourseLoaderCRS::ParseCommaSeparatedList(const RString &sParamValue, std::v
 }
 
 template <typename T>
-bool CourseLoaderCRS::ParseRangedValue(const RString& sParamValue, T &minValue, T &maxValue, const RString &sParamName, const RString &sPath)
+bool CourseLoaderCRS::ParseRangedValue(const std::string& sParamValue, T &minValue, T &maxValue, const std::string &sParamName, const std::string &sPath)
 {
-	std::vector<RString> values;
+	std::vector<std::string> values;
 	split(sParamValue, "-", values);
 	if(values.size() == 0)
 	{
@@ -749,7 +749,7 @@ LOG->UserLog( "Course file", sPath, "has an invalid %s parameter, expected at le
 	return true;
 }
 
-bool CourseLoaderCRS::SetCourseSongSort(CourseEntry &new_entry, SongSort sort, int index, const RString &sPath)
+bool CourseLoaderCRS::SetCourseSongSort(CourseEntry &new_entry, SongSort sort, int index, const std::string &sPath)
 {
 	if( sort == SongSort_Invalid )
 	{

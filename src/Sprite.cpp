@@ -185,7 +185,7 @@ void Sprite::LoadFromNode( const XNode* pNode )
 {
 	/* Texture may refer to the ID of a render target; if it's already
 	 * registered, use it without trying to resolve it. */
-	RString sPath;
+	std::string sPath;
 	pNode->GetAttrValue( "Texture", sPath );
 	if( !sPath.empty() && !TEXTUREMAN->IsTextureRegistered( RageTextureID(sPath) ) )
 		ActorUtil::GetAttrPath( pNode, "Texture", sPath );
@@ -256,8 +256,8 @@ void Sprite::LoadFromNode( const XNode* pNode )
 		else for( int i=0; true; i++ )
 		{
 			// deprecated
-			RString sFrameKey = ssprintf( "Frame%04d", i );
-			RString sDelayKey = ssprintf( "Delay%04d", i );
+			std::string sFrameKey = ssprintf( "Frame%04d", i );
+			std::string sDelayKey = ssprintf( "Delay%04d", i );
 			State newState;
 
 			int iFrameIndex;
@@ -367,11 +367,11 @@ void Sprite::LoadFromTexture( RageTextureID ID )
 	SetTexture( pTexture );
 }
 
-void Sprite::LoadFromCached( const RString &sDir, const RString &sPath )
+void Sprite::LoadFromCached( const std::string &sDir, const std::string &sPath )
 {
 	if( sPath.empty() )
 	{
-		Load( THEME->GetPathG("Common","fallback %s", sDir) );
+		Load( THEME->GetPathG("Common",ssprintf("fallback %s", sDir.c_str())) );
 		return;
 	}
 
@@ -385,7 +385,7 @@ void Sprite::LoadFromCached( const RString &sDir, const RString &sPath )
 	else if( IsAFile(sPath) )
 		Load( sPath );
 	else
-		Load( THEME->GetPathG("Common","fallback %s", sDir) );
+		Load( THEME->GetPathG("Common",ssprintf("fallback %s", sDir.c_str())) );
 }
 
 void Sprite::LoadStatesFromTexture()
@@ -821,7 +821,7 @@ void Sprite::SetState( int iNewState )
 		if( !m_pTexture || (m_pTexture->GetID().filename.find("_blank") == std::string::npos &&
 			m_pTexture->GetID().filename.find("_missing") == std::string::npos) )
 		{
-			RString sError;
+			std::string sError;
 			if( m_pTexture )
 				sError = ssprintf("A Sprite '%s' (\"%s\") tried to set state to frame %d, but it has only %u frames.",
 					/*
@@ -860,10 +860,10 @@ void Sprite::SetSecondsIntoAnimation( float fSeconds )
 	UpdateAnimationState();
 }
 
-RString	Sprite::GetTexturePath() const
+std::string	Sprite::GetTexturePath() const
 {
 	if( m_pTexture == nullptr )
-		return RString();
+		return std::string();
 
 	return m_pTexture->GetID().filename;
 }
@@ -1129,7 +1129,7 @@ public:
 			RageTextureID ID( SArg(1) );
 			if(lua_isstring(L, 2))
 			{
-				RString additional_hints= SArg(2);
+				std::string additional_hints= SArg(2);
 				ID.AdditionalTextureHints= additional_hints;
 			}
 			p->Load( ID );

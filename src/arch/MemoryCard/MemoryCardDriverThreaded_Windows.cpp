@@ -20,7 +20,7 @@ MemoryCardDriverThreaded_Windows::~MemoryCardDriverThreaded_Windows()
 {
 }
 
-static bool TestReady( const RString &sDrive, RString &sVolumeLabelOut )
+static bool TestReady( const std::string &sDrive, std::string &sVolumeLabelOut )
 {
 	TCHAR szVolumeNameBuffer[MAX_PATH];
 	DWORD dwVolumeSerialNumber;
@@ -29,7 +29,7 @@ static bool TestReady( const RString &sDrive, RString &sVolumeLabelOut )
 	TCHAR szFileSystemNameBuffer[MAX_PATH];
 
 	if( !GetVolumeInformation(
-		sDrive,
+		sDrive.c_str(),
 		szVolumeNameBuffer,
 		sizeof(szVolumeNameBuffer),
 		&dwVolumeSerialNumber,
@@ -50,14 +50,14 @@ bool MemoryCardDriverThreaded_Windows::TestWrite( UsbStorageDevice* pDevice )
 	 * the chance of corruption if the user removes the device immediately, without doing anything. */
 	for( int i = 0; i < 10; ++i )
 	{
-		HANDLE hFile = CreateFile( ssprintf( "%stmp%i", pDevice->sOsMountDir.c_str(), RandomInt(100000)),
+		HANDLE hFile = CreateFile( ssprintf( "%stmp%i", pDevice->sOsMountDir.c_str(), RandomInt(100000)).c_str(),
 			GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE,
 			nullptr, CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE, nullptr );
 
 		if( hFile == INVALID_HANDLE_VALUE )
 		{
 			DWORD iError = GetLastError();
-			LOG->Warn( werr_ssprintf(iError, "Couldn't write to %s", pDevice->sOsMountDir.c_str()) );
+			LOG->Warn( werr_ssprintf(iError, "Couldn't write to %s", pDevice->sOsMountDir.c_str()).c_str() );
 
 			if( iError == ERROR_FILE_EXISTS )
 				continue;
@@ -72,14 +72,14 @@ bool MemoryCardDriverThreaded_Windows::TestWrite( UsbStorageDevice* pDevice )
 	return false;
 }
 
-static bool IsFloppyDrive( const RString &sDrive )
+static bool IsFloppyDrive( const std::string &sDrive )
 {
 	char szBuf[1024];
 
-	int iRet = QueryDosDevice( sDrive, szBuf, 1024 );
+	int iRet = QueryDosDevice( sDrive.c_str(), szBuf, 1024 );
 	if( iRet == 0 )
 	{
-		LOG->Warn( werr_ssprintf(GetLastError(), "QueryDosDevice(%s)", sDrive.c_str()) );
+		LOG->Warn( werr_ssprintf(GetLastError(), "QueryDosDevice(%s)", sDrive.c_str()).c_str() );
 		return false;
 	}
 
@@ -112,9 +112,9 @@ void MemoryCardDriverThreaded_Windows::GetUSBStorageDevices( std::vector<UsbStor
 		if( !(m_dwLastLogicalDrives & mask) )
 			continue; // drive letter is invalid
 
-		RString sDrive = ssprintf( "%c:", 'A'+i%26 );
+		std::string sDrive = ssprintf( "%c:", 'A'+i%26 );
 
-		LOG->Trace( sDrive );
+		LOG->Trace( sDrive.c_str() );
 
 		if( IsFloppyDrive(sDrive) )
 		{
@@ -127,9 +127,9 @@ void MemoryCardDriverThreaded_Windows::GetUSBStorageDevices( std::vector<UsbStor
 
 		bool bIsSpecifiedMountPoint = false;
 		FOREACH_ENUM( PlayerNumber, p )
-			bIsSpecifiedMountPoint |= MEMCARDMAN->m_sMemoryCardOsMountPoint[p].Get().EqualsNoCase(sDrive);
+			bIsSpecifiedMountPoint |= StringUtil::EqualsNoCase(MEMCARDMAN->m_sMemoryCardOsMountPoint[p].Get(), sDrive);
 
-		RString sDrivePath = sDrive + "\\";
+		std::string sDrivePath = sDrive + "\\";
 
 		if( bIsSpecifiedMountPoint )
 		{
@@ -137,14 +137,14 @@ void MemoryCardDriverThreaded_Windows::GetUSBStorageDevices( std::vector<UsbStor
 		}
 		else
 		{
-			if( GetDriveType(sDrivePath) != DRIVE_REMOVABLE )
+			if( GetDriveType(sDrivePath.c_str()) != DRIVE_REMOVABLE )
 			{
 				LOG->Trace( "not DRIVE_REMOVABLE" );
 				continue;
 			}
 		}
 
-		RString sVolumeLabel;
+		std::string sVolumeLabel;
 		if( !TestReady(sDrivePath, sVolumeLabel) )
 		{
 			LOG->Trace( "not TestReady" );
@@ -171,7 +171,7 @@ void MemoryCardDriverThreaded_Windows::GetUSBStorageDevices( std::vector<UsbStor
 		DWORD dwNumberOfFreeClusters;
 		DWORD dwTotalNumberOfClusters;
 		if( GetDiskFreeSpace(
-				usbd.sOsMountDir,
+				usbd.sOsMountDir.c_str(),
 				&dwSectorsPerCluster,
 				&dwBytesPerSector,
 				&dwNumberOfFreeClusters,
@@ -196,18 +196,18 @@ bool MemoryCardDriverThreaded_Windows::Mount( UsbStorageDevice* pDevice )
 void MemoryCardDriverThreaded_Windows::Unmount( UsbStorageDevice* pDevice )
 {
 	/* Try to flush the device before returning.  This requires administrator priviliges. */
-	HANDLE hDevice = CreateFile( pDevice->sDevice, GENERIC_WRITE,
+	HANDLE hDevice = CreateFile( pDevice->sDevice.c_str(), GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,
 		nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr );
 
 	if( hDevice == INVALID_HANDLE_VALUE )
 	{
-		LOG->Warn( werr_ssprintf(GetLastError(), "Couldn't open memory card device to flush (%s): CreateFile", pDevice->sDevice.c_str()) );
+		LOG->Warn( werr_ssprintf(GetLastError(), "Couldn't open memory card device to flush (%s): CreateFile", pDevice->sDevice.c_str()).c_str() );
 		return;
 	}
 
 	if( !FlushFileBuffers(hDevice) )
-		LOG->Warn( werr_ssprintf(GetLastError(), "Couldn't flush memory card device (%s): FlushFileBuffers", pDevice->sDevice.c_str()) );
+		LOG->Warn( werr_ssprintf(GetLastError(), "Couldn't flush memory card device (%s): FlushFileBuffers", pDevice->sDevice.c_str()).c_str() );
 	CloseHandle( hDevice );
 }
 

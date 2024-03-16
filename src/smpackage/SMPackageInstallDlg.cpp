@@ -19,6 +19,7 @@
 #include "RageLog.h"
 #include "arch/Dialog/Dialog.h"
 #include "RageFileDriverDirect.h"
+#include "StringUtil.h"
 
 #include <vector>
 
@@ -32,7 +33,7 @@ static char THIS_FILE[] = __FILE__;
 // CSMPackageInstallDlg dialog
 
 
-CSMPackageInstallDlg::CSMPackageInstallDlg(RString sPackagePath, CWnd* pParent /*=NULL*/)
+CSMPackageInstallDlg::CSMPackageInstallDlg(std::string sPackagePath, CWnd* pParent /*=NULL*/)
 	: CDialog(CSMPackageInstallDlg::IDD, pParent)
 {
 	//{{AFX_DATA_INIT(CSMPackageInstallDlg)
@@ -67,12 +68,12 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CSMPackageInstallDlg message handlers
 
-static bool CompareStringNoCase( const RString &s1, const RString &s2 )
+static bool CompareStringNoCase( const std::string &s1, const std::string &s2 )
 {
-	return s1.CompareNoCase( s2 ) < 0;
+	return StringUtil::CompareNoCase(s1, s2 ) < 0;
 }
 
-void GetSmzipFilesToExtract( RageFileDriver &zip, std::vector<RString> &vsOut )
+void GetSmzipFilesToExtract( RageFileDriver &zip, std::vector<std::string> &vsOut )
 {
 	GetDirListingRecursive( &zip, "/", "*", vsOut );
 	SMPackageUtil::StripIgnoredSmzipFiles( vsOut );
@@ -98,34 +99,34 @@ BOOL CSMPackageInstallDlg::OnInitDialog()
 	RageFileOsAbsolute file;
 	if( !file.Open(m_sPackagePath) )
 	{
-		Dialog::OK( ssprintf(COULD_NOT_OPEN_FILE.GetValue(),m_sPackagePath.c_str()) );
+		Dialog::OK( ssprintf(COULD_NOT_OPEN_FILE.GetValue().c_str(),m_sPackagePath.c_str()) );
 		exit(1);	// better way to abort?
 	}
 
 	RageFileDriverZip zip;
 	if( !zip.Load(&file) )
 	{
-		Dialog::OK( ssprintf(IS_NOT_A_VALID_ZIP.GetValue(),m_sPackagePath.c_str()) );
+		Dialog::OK( ssprintf(IS_NOT_A_VALID_ZIP.GetValue().c_str(),m_sPackagePath.c_str()) );
 		exit(1);	// better way to abort?
 	}
 
 	//
 	// Set the text of the first Edit box
 	//
-	RString sMessage1 = "\t" + m_sPackagePath;
+	std::string sMessage1 = "\t" + m_sPackagePath;
 	CEdit* pEdit1 = (CEdit*)GetDlgItem(IDC_EDIT_MESSAGE1);
-	pEdit1->SetWindowText( sMessage1 );
+	pEdit1->SetWindowText( sMessage1.c_str() );
 
 
 	//
 	// Set the text of the second Edit box
 	//
 	{
-		std::vector<RString> vs;
+		std::vector<std::string> vs;
 		GetSmzipFilesToExtract( zip, vs );
 		CEdit* pEdit2 = (CEdit*)GetDlgItem(IDC_EDIT_MESSAGE2);
-		RString sText = "\t" + join( "\r\n\t", vs );
-		pEdit2->SetWindowText( sText );
+		std::string sText = "\t" + join( "\r\n\t", vs );
+		pEdit2->SetWindowText( sText.c_str() );
 	}
 
 
@@ -185,10 +186,10 @@ static bool CheckPackages( RageFileDriverZip &fileDriver )
 	int cnt = 0;
 	ini.GetValue( "Packages", "NumPackages", cnt );
 
-	std::vector<RString> vsDirectories;
+	std::vector<std::string> vsDirectories;
 	for( int i = 0; i < cnt; ++i )
 	{
-		RString path;
+		std::string path;
 		if( !ini.GetValue( "Packages", ssprintf("%i", i), path) )
 			continue;
 
@@ -207,7 +208,7 @@ static bool CheckPackages( RageFileDriverZip &fileDriver )
 
 	{
 		UninstallOld UninstallOldDlg;
-		UninstallOldDlg.m_sPackages = join("\r\n", vsDirectories);
+		UninstallOldDlg.m_sPackages = (join("\r\n", vsDirectories)).c_str();
 		int nResponse = UninstallOldDlg.DoModal();
 		if( nResponse == IDCANCEL )
 			return false;	// cancelled
@@ -217,13 +218,13 @@ static bool CheckPackages( RageFileDriverZip &fileDriver )
 
 	char cwd_[MAX_PATH];
 	_getcwd(cwd_, MAX_PATH);
-	RString cwd(cwd_);
+	std::string cwd(cwd_);
 	if( cwd[cwd.size()-1] != '\\' )
 		cwd += "\\";
 
 	for( int i = 0; i < (int)vsDirectories.size(); ++i )
 	{
-		RString sDir = vsDirectories[i];
+		std::string sDir = vsDirectories[i];
 		sDir += "/";
 		if( !DeleteRecursive(sDir) )	// error deleting
 		{
@@ -249,7 +250,7 @@ void CSMPackageInstallDlg::OnOK()
 	m_comboDir.EnableWindow( FALSE );
 	m_buttonEdit.EnableWindow( FALSE );
 
-	RString sInstallDir;
+	std::string sInstallDir;
 	{
 		CString s;
 		m_comboDir.GetWindowText( s );
@@ -271,14 +272,14 @@ void CSMPackageInstallDlg::OnOK()
 	RageFileOsAbsolute file;
 	if( !file.Open(m_sPackagePath) )
 	{
-		Dialog::OK( ssprintf(COULD_NOT_OPEN_FILE.GetValue(),m_sPackagePath.c_str()) );
+		Dialog::OK( ssprintf(COULD_NOT_OPEN_FILE.GetValue().c_str(),m_sPackagePath.c_str()) );
 		exit(1);	// better way to abort?
 	}
 
 	RageFileDriverZip zip;
 	if( !zip.Load(&file) )
 	{
-		Dialog::OK( ssprintf(IS_NOT_A_VALID_ZIP.GetValue(),m_sPackagePath.c_str()) );
+		Dialog::OK( ssprintf(IS_NOT_A_VALID_ZIP.GetValue().c_str(),m_sPackagePath.c_str()) );
 		exit(1);	// better way to abort?
 	}
 
@@ -287,12 +288,12 @@ void CSMPackageInstallDlg::OnOK()
 
 	// Show comment (if any)
 	{
-		RString sComment = zip.GetGlobalComment();
+		std::string sComment = zip.GetGlobalComment();
 		bool DontShowComment;
 		if( sComment != "" && (!SMPackageUtil::GetPref("DontShowComment", DontShowComment) || !DontShowComment) )
 		{
 			ShowComment commentDlg;
-			commentDlg.m_sComment = sComment;
+			commentDlg.m_sComment = sComment.c_str();
 			int nResponse = commentDlg.DoModal();
 			if( nResponse != IDOK )
 				return;	// cancelled
@@ -307,13 +308,13 @@ void CSMPackageInstallDlg::OnOK()
 
 
 	// Unzip the SMzip package into the installation folder
-	std::vector<RString> vs;
+	std::vector<std::string> vs;
 	GetSmzipFilesToExtract( zip, vs );
 	for( unsigned i=0; i<vs.size(); i++ )
 	{
 		// Throw some text up so the user has something to look at during the long pause.
 		CEdit* pEdit1 = (CEdit*)GetDlgItem(IDC_STATIC_MESSAGE1);
-		pEdit1->SetWindowText( ssprintf(INSTALLING_PLEASE_WAIT.GetValue(), m_sPackagePath.c_str()) );
+		pEdit1->SetWindowText( ssprintf(INSTALLING_PLEASE_WAIT.GetValue().c_str(), m_sPackagePath.c_str()).c_str() );
 		CEdit* pEdit2 = (CEdit*)GetDlgItem(IDC_EDIT_MESSAGE2);
 		pEdit2->SetWindowText( "" );
 		GetDlgItem(IDC_STATIC_MESSAGE2)->ShowWindow( SW_HIDE );
@@ -338,16 +339,16 @@ void CSMPackageInstallDlg::OnOK()
 		do
 		{
 			// Extract the files
-			const RString sFile = vs[i];
-			LOG->Trace( "Extracting: "+sFile );
+			const std::string sFile = vs[i];
+			LOG->Trace( ("Extracting: " + sFile).c_str() );
 
-			RString sError;
+			std::string sError;
 			{
 				int iErr;
 				RageFileBasic *pFileFrom = zip.Open( sFile, RageFile::READ, iErr );
 				if( pFileFrom == NULL )
 				{
-					sError = ssprintf( ERROR_OPENING_SOURCE_FILE.GetValue(), sFile.c_str(), ssprintf("%d",iErr).c_str() );
+					sError = ssprintf( ERROR_OPENING_SOURCE_FILE.GetValue().c_str(), sFile.c_str(), ssprintf("%d",iErr).c_str() );
 					goto show_error;
 				}
 
@@ -355,14 +356,14 @@ void CSMPackageInstallDlg::OnOK()
 				RageFileBasic *pFileTo = dir.Open( sFile, RageFile::WRITE, iError );
 				if( pFileTo == NULL )
 				{
-					sError = ssprintf( ERROR_OPENING_DESTINATION_FILE.GetValue(), sFile.c_str(), pFileTo->GetError().c_str() );
+					sError = ssprintf( ERROR_OPENING_DESTINATION_FILE.GetValue().c_str(), sFile.c_str(), pFileTo->GetError().c_str() );
 					goto show_error;
 				}
 
-				RString sErr;
+				std::string sErr;
 				if( !FileCopy(*pFileFrom, *pFileTo, sErr) )
 				{
-					sError = ssprintf( ERROR_COPYING_FILE.GetValue(), sFile.c_str(), sErr.c_str() );
+					sError = ssprintf( ERROR_COPYING_FILE.GetValue().c_str(), sFile.c_str(), sErr.c_str() );
 					goto show_error;
 				}
 
@@ -413,10 +414,10 @@ void CSMPackageInstallDlg::RefreshInstallationList()
 {
 	m_comboDir.ResetContent();
 
-	std::vector<RString> asInstallDirs;
+	std::vector<std::string> asInstallDirs;
 	SMPackageUtil::GetGameInstallDirs( asInstallDirs );
 	for( unsigned i=0; i<asInstallDirs.size(); i++ )
-		m_comboDir.AddString( asInstallDirs[i] );
+		m_comboDir.AddString( asInstallDirs[i].c_str() );
 	m_comboDir.SetCurSel( 0 );	// guaranteed to be at least one item
 }
 

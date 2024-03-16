@@ -43,21 +43,21 @@ std::int64_t ArchHooks::GetMicrosecondsSinceStart( bool bAccurate )
 	return ret;
 }
 
-static RString GetMountDir( const RString &sDirOfExecutable )
+static std::string GetMountDir( const std::string &sDirOfExecutable )
 {
 	/* All Windows data goes in the directory one level above the executable. */
 	CHECKPOINT_M( ssprintf( "DOE \"%s\"", sDirOfExecutable.c_str()) );
-	std::vector<RString> asParts;
+	std::vector<std::string> asParts;
 	split( sDirOfExecutable, "/", asParts );
 	CHECKPOINT_M( ssprintf( "... %i asParts", asParts.size()) );
 	ASSERT_M( asParts.size() > 1, ssprintf("Strange sDirOfExecutable: %s", sDirOfExecutable.c_str()) );
-	RString sDir = join( "/", asParts.begin(), asParts.end()-1 );
+	std::string sDir = join( "/", asParts.begin(), asParts.end()-1 );
 	return sDir;
 }
 
-void ArchHooks::MountInitialFilesystems( const RString &sDirOfExecutable )
+void ArchHooks::MountInitialFilesystems( const std::string &sDirOfExecutable )
 {
-	RString sDir = GetMountDir( sDirOfExecutable );
+	std::string sDir = GetMountDir( sDirOfExecutable );
 	FILEMAN->Mount("dirro", sDir, "/");
 
 	bool portable = DoesFileExist("/Portable.ini");
@@ -83,7 +83,7 @@ void ArchHooks::MountInitialFilesystems( const RString &sDirOfExecutable )
 	}
 }
 
-void ArchHooks::MountUserFilesystems( const RString &sDirOfExecutable )
+void ArchHooks::MountUserFilesystems( const std::string &sDirOfExecutable )
 {
 	/*
 	 * Look, I know what you're thinking: "Hey, let's put all this stuff into
@@ -92,10 +92,10 @@ void ArchHooks::MountUserFilesystems( const RString &sDirOfExecutable )
 	 * happen. Just don't do it, seriously. Keep them in one place.
 	 * - Colby
 	 */
-	RString sAppDataDir = SpecialDirs::GetAppDataDir() + PRODUCT_ID;
-	//RString sCommonAppDataDir = SpecialDirs::GetCommonAppDataDir() + PRODUCT_ID;
-	//RString sLocalAppDataDir = SpecialDirs::GetLocalAppDataDir() + PRODUCT_ID;
-	//RString sPicturesDir = SpecialDirs::GetPicturesDir() + PRODUCT_ID;
+	std::string sAppDataDir = SpecialDirs::GetAppDataDir() + PRODUCT_ID;
+	//std::string sCommonAppDataDir = SpecialDirs::GetCommonAppDataDir() + PRODUCT_ID;
+	//std::string sLocalAppDataDir = SpecialDirs::GetLocalAppDataDir() + PRODUCT_ID;
+	//std::string sPicturesDir = SpecialDirs::GetPicturesDir() + PRODUCT_ID;
 
 	FILEMAN->Mount( "dir", sAppDataDir + "/Announcers", "/Announcers" );
 	FILEMAN->Mount( "dir", sAppDataDir + "/BGAnimations", "/BGAnimations" );
@@ -116,7 +116,7 @@ void ArchHooks::MountUserFilesystems( const RString &sDirOfExecutable )
 	FILEMAN->Mount( "dir", sAppDataDir + "/Themes", "/Themes" );
 }
 
-static RString LangIdToString( LANGID l )
+static std::string LangIdToString( LANGID l )
 {
 	switch( PRIMARYLANGID(l) )
 	{
@@ -216,7 +216,7 @@ static LANGID GetLanguageID()
 	return GetUserDefaultLangID();
 }
 
-RString ArchHooks::GetPreferredLanguage()
+std::string ArchHooks::GetPreferredLanguage()
 {
 	return LangIdToString( GetLanguageID() );
 }

@@ -12,16 +12,16 @@
 #include <vector>
 
 
-void NotesLoader::GetMainAndSubTitlesFromFullTitle( const RString &sFullTitle, RString &sMainTitleOut, RString &sSubTitleOut )
+void NotesLoader::GetMainAndSubTitlesFromFullTitle( const std::string &sFullTitle, std::string &sMainTitleOut, std::string &sSubTitleOut )
 {
-	const RString sLeftSeps[]  = { "\t", " -", " ~", " (", " [" };
+	const std::string sLeftSeps[]  = { "\t", " -", " ~", " (", " [" };
 
 	for( unsigned i=0; i<ARRAYLEN(sLeftSeps); i++ )
 	{
 		std::size_t iBeginIndex = sFullTitle.find( sLeftSeps[i] );
 		if( iBeginIndex == std::string::npos )
 			continue;
-		sMainTitleOut = sFullTitle.Left( (int) iBeginIndex );
+		sMainTitleOut = sFullTitle.substr(0, (int) iBeginIndex );
 		sSubTitleOut = sFullTitle.substr( iBeginIndex+1, sFullTitle.size()-iBeginIndex+1 );
 		return;
 	}
@@ -29,9 +29,9 @@ void NotesLoader::GetMainAndSubTitlesFromFullTitle( const RString &sFullTitle, R
 	sSubTitleOut = "";
 };
 
-bool NotesLoader::LoadFromDir( const RString &sPath, Song &out, std::set<RString> &BlacklistedImages, bool load_autosave )
+bool NotesLoader::LoadFromDir( const std::string &sPath, Song &out, std::set<std::string> &BlacklistedImages, bool load_autosave )
 {
-	std::vector<RString> list;
+	std::vector<std::string> list;
 
 	BlacklistedImages.clear();
 	SSCLoader loaderSSC;

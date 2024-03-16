@@ -9,21 +9,22 @@
 #include "resource.h"
 #include "LocalizedString.h"
 #include "arch/Dialog/Dialog.h"
+#include "StringUtil.h"
 
 #include <cstddef>
 #include <vector>
 
-static const RString SMPACKAGE_KEY = "HKEY_LOCAL_MACHINE\\Software\\" PRODUCT_ID "\\smpackage";
-static const RString INSTALLATIONS_KEY = "HKEY_LOCAL_MACHINE\\Software\\" PRODUCT_ID "\\smpackage\\Installations";
+static const std::string SMPACKAGE_KEY = "HKEY_LOCAL_MACHINE\\Software\\" PRODUCT_ID "\\smpackage";
+static const std::string INSTALLATIONS_KEY = "HKEY_LOCAL_MACHINE\\Software\\" PRODUCT_ID "\\smpackage\\Installations";
 
-void SMPackageUtil::WriteGameInstallDirs( const std::vector<RString>& asInstallDirsToWrite )
+void SMPackageUtil::WriteGameInstallDirs( const std::vector<std::string>& asInstallDirsToWrite )
 {
 	RegistryAccess::CreateKey( INSTALLATIONS_KEY );
 
 	for( unsigned i=0; i<100; i++ )
 	{
-		RString sName = ssprintf("%d",i);
-		RString sValue;
+		std::string sName = ssprintf("%d",i);
+		std::string sValue;
 		if( i < asInstallDirsToWrite.size() )
 			sValue = asInstallDirsToWrite[i];
 
@@ -31,15 +32,15 @@ void SMPackageUtil::WriteGameInstallDirs( const std::vector<RString>& asInstallD
 	}
 }
 
-void SMPackageUtil::GetGameInstallDirs( std::vector<RString>& asInstallDirsOut )
+void SMPackageUtil::GetGameInstallDirs( std::vector<std::string>& asInstallDirsOut )
 {
 	asInstallDirsOut.clear();
 
 	for( int i=0; i<100; i++ )
 	{
-		RString sName = ssprintf("%d",i);
+		std::string sName = ssprintf("%d",i);
 
-		RString sPath;
+		std::string sPath;
 		if( !RegistryAccess::GetRegValue(INSTALLATIONS_KEY, sName, sPath) )
 			continue;
 
@@ -56,15 +57,15 @@ void SMPackageUtil::GetGameInstallDirs( std::vector<RString>& asInstallDirsOut )
 	WriteGameInstallDirs( asInstallDirsOut );
 }
 
-void SMPackageUtil::AddGameInstallDir( const RString &sNewInstallDir )
+void SMPackageUtil::AddGameInstallDir( const std::string &sNewInstallDir )
 {
-	std::vector<RString> asInstallDirs;
+	std::vector<std::string> asInstallDirs;
 	GetGameInstallDirs( asInstallDirs );
 
 	bool bAlreadyInList = false;
 	for( unsigned i=0; i<asInstallDirs.size(); i++ )
 	{
-		if( asInstallDirs[i].CompareNoCase(sNewInstallDir) == 0 )
+		if( StringUtil::EqualsNoCase(asInstallDirs[i], sNewInstallDir) )
 		{
 			bAlreadyInList = true;
 			break;
@@ -80,23 +81,23 @@ void SMPackageUtil::AddGameInstallDir( const RString &sNewInstallDir )
 void SMPackageUtil::SetDefaultInstallDir( int iInstallDirIndex )
 {
 	// move the specified index to the top of the list
-	std::vector<RString> asInstallDirs;
+	std::vector<std::string> asInstallDirs;
 	GetGameInstallDirs( asInstallDirs );
 	ASSERT( iInstallDirIndex >= 0  &&  iInstallDirIndex < (int)asInstallDirs.size() );
-	RString sDefaultInstallDir = asInstallDirs[iInstallDirIndex];
+	std::string sDefaultInstallDir = asInstallDirs[iInstallDirIndex];
 	asInstallDirs.erase( asInstallDirs.begin()+iInstallDirIndex );
 	asInstallDirs.insert( asInstallDirs.begin(), sDefaultInstallDir );
 	WriteGameInstallDirs( asInstallDirs );
 }
 
-void SMPackageUtil::SetDefaultInstallDir( const RString &sInstallDir )
+void SMPackageUtil::SetDefaultInstallDir( const std::string &sInstallDir )
 {
-	std::vector<RString> asInstallDirs;
+	std::vector<std::string> asInstallDirs;
 	GetGameInstallDirs( asInstallDirs );
 
 	for( unsigned i=0; i<asInstallDirs.size(); i++ )
 	{
-		if( asInstallDirs[i].CompareNoCase(sInstallDir) == 0 )
+		if( StringUtil::EqualsNoCase(asInstallDirs[i], sInstallDir) )
 		{
 			SetDefaultInstallDir( i );
 			break;
@@ -104,24 +105,24 @@ void SMPackageUtil::SetDefaultInstallDir( const RString &sInstallDir )
 	}
 }
 
-bool SMPackageUtil::IsValidInstallDir( const RString &sInstallDir )
+bool SMPackageUtil::IsValidInstallDir( const std::string &sInstallDir )
 {
 	return DoesOsAbsoluteFileExist( sInstallDir + "/Songs" );
 }
 
-bool SMPackageUtil::GetPref( const RString &name, bool &val )
+bool SMPackageUtil::GetPref( const std::string &name, bool &val )
 {
 	return RegistryAccess::GetRegValue( SMPACKAGE_KEY, name, val );
 }
 
-bool SMPackageUtil::SetPref( const RString &name, bool val )
+bool SMPackageUtil::SetPref( const std::string &name, bool val )
 {
 	return RegistryAccess::SetRegValue( SMPACKAGE_KEY, name, val );
 }
 
 /* Get a package directory.  For most paths, this is the first two components.  For
  * songs and note skins, this is the first three. */
-RString SMPackageUtil::GetPackageDirectory(const RString &path)
+std::string SMPackageUtil::GetPackageDirectory(const std::string &path)
 {
 	// ignore CVS/.svn files:
 	if( path.find("CVS") != std::string::npos )
@@ -129,36 +130,36 @@ RString SMPackageUtil::GetPackageDirectory(const RString &path)
 	if( path.find(".svn") != std::string::npos )
 		return "";
 
-	std::vector<RString> Parts;
+	std::vector<std::string> Parts;
 	split( path, "\\", Parts );
 
 	unsigned NumParts = 2;
 	// Songs/group/single_song, NoteSkins/gametype/single_noteskin:
-	if( !Parts[0].CompareNoCase("Songs") || !Parts[0].CompareNoCase("NoteSkins") )
+	if( !StringUtil::CompareNoCase(Parts[0], "Songs") || !StringUtil::CompareNoCase(Parts[0], "NoteSkins") )
 		NumParts = 3;
 	if( Parts.size() < NumParts )
 		return "";
 
 	Parts.erase(Parts.begin() + NumParts, Parts.end());
 
-	RString ret = join( "\\", Parts );
+	std::string ret = join( "\\", Parts );
 	if( !IsADirectory(ret) )
 		return "";
 	return ret;
 }
 
-bool SMPackageUtil::IsValidPackageDirectory( const RString &path )
+bool SMPackageUtil::IsValidPackageDirectory( const std::string &path )
 {
 	/* Make sure the path contains only second-level directories, and doesn't
 	 * contain any ".", "..", "...", etc. dirs. */
-	std::vector<RString> Parts;
+	std::vector<std::string> Parts;
 	split( path, "\\", Parts, true );
 	if( Parts.size() == 0 )
 		return false;
 
 	/* Make sure we're not going to "uninstall" an entire Songs subfolder. */
 	unsigned NumParts = 2;
-	if( !Parts[0].CompareNoCase("songs") )
+	if( !StringUtil::CompareNoCase(Parts[0], "songs") )
 		NumParts = 3;
 	if( Parts.size() < NumParts )
 		return false;
@@ -178,10 +179,10 @@ bool SMPackageUtil::LaunchGame()
 	STARTUPINFO	si;
 	ZeroMemory( &si, sizeof(si) );
 
-	RString sFile = "Program\\" PRODUCT_FAMILY ".exe";
+	std::string sFile = "Program\\" PRODUCT_FAMILY ".exe";
 
 	BOOL bSuccess = CreateProcess(
-		sFile,	// pointer to name of executable module
+		sFile.c_str(),	// pointer to name of executable module
 		NULL,	// pointer to command line string
 		NULL,  // process security attributes
 		NULL,   // thread security attributes
@@ -194,7 +195,7 @@ bool SMPackageUtil::LaunchGame()
 	);
 	if( !bSuccess )
 	{
-		RString sError = ssprintf( COULD_NOT_FIND.GetValue(), sFile.c_str() );
+		std::string sError = ssprintf( COULD_NOT_FIND.GetValue().c_str(), sFile.c_str() );
 		Dialog::OK( sError );
 		return false;
 	}
@@ -202,15 +203,15 @@ bool SMPackageUtil::LaunchGame()
 	return true;
 }
 
-RString SMPackageUtil::GetLanguageDisplayString( const RString &sIsoCode )
+std::string SMPackageUtil::GetLanguageDisplayString( const std::string &sIsoCode )
 {
 	const LanguageInfo *li = GetLanguageInfo( sIsoCode );
 	return ssprintf( "%s (%s)", li ? li->szIsoCode:sIsoCode.c_str(), li->szEnglishName );
 }
 
-RString SMPackageUtil::GetLanguageCodeFromDisplayString( const RString &sDisplayString )
+std::string SMPackageUtil::GetLanguageCodeFromDisplayString( const std::string &sDisplayString )
 {
-	RString s = sDisplayString;
+	std::string s = sDisplayString;
 	// strip the space and everything after
 	std::size_t iSpace = s.find(' ');
 	ASSERT( iSpace != s.npos );
@@ -218,11 +219,11 @@ RString SMPackageUtil::GetLanguageCodeFromDisplayString( const RString &sDisplay
 	return s;
 }
 
-void SMPackageUtil::StripIgnoredSmzipFiles( std::vector<RString> &vsFilesInOut )
+void SMPackageUtil::StripIgnoredSmzipFiles( std::vector<std::string> &vsFilesInOut )
 {
 	for( int i=vsFilesInOut.size()-1; i>=0; i-- )
 	{
-		const RString &sFile = vsFilesInOut[i];
+		const std::string &sFile = vsFilesInOut[i];
 
 		bool bEraseThis = false;
 		bEraseThis |= EndsWith( sFile, "smzip.ctl" );
@@ -236,16 +237,16 @@ void SMPackageUtil::StripIgnoredSmzipFiles( std::vector<RString> &vsFilesInOut )
 	}
 }
 
-bool SMPackageUtil::DoesOsAbsoluteFileExist( const RString &sOsAbsoluteFile )
+bool SMPackageUtil::DoesOsAbsoluteFileExist( const std::string &sOsAbsoluteFile )
 {
 #if defined(WIN32)
-	DWORD dwAttr = ::GetFileAttributes( sOsAbsoluteFile );
+	DWORD dwAttr = ::GetFileAttributes( sOsAbsoluteFile.c_str() );
 	return bool(dwAttr != (DWORD)-1);
 #endif
 }
 
 
-static const RString TEMP_MOUNT_POINT = "/@package/";
+static const std::string TEMP_MOUNT_POINT = "/@package/";
 
 RageFileOsAbsolute::~RageFileOsAbsolute()
 {
@@ -253,7 +254,7 @@ RageFileOsAbsolute::~RageFileOsAbsolute()
 		FILEMAN->Unmount( "dir", m_sOsDir, TEMP_MOUNT_POINT );
 }
 
-bool RageFileOsAbsolute::Open( const RString& path, int mode )
+bool RageFileOsAbsolute::Open( const std::string& path, int mode )
 {
 	if( !m_sOsDir.empty() )
 		FILEMAN->Unmount( "dir", m_sOsDir, TEMP_MOUNT_POINT );
@@ -264,7 +265,7 @@ bool RageFileOsAbsolute::Open( const RString& path, int mode )
 	m_sOsDir.erase( m_sOsDir.begin()+iStart, m_sOsDir.end() );
 
 	FILEMAN->Mount( "dir", m_sOsDir, TEMP_MOUNT_POINT );
-	RString sFileName = path.Right( path.size()-m_sOsDir.size() );
+	std::string sFileName = path.substr( m_sOsDir.size() );
 	return RageFile::Open( TEMP_MOUNT_POINT+sFileName, mode );
 }
 

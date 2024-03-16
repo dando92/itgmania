@@ -31,7 +31,7 @@ static void GetPrefsDefaultModifiers( PlayerOptions &po, SongOptions &so )
 
 static void SetPrefsDefaultModifiers( const PlayerOptions &po, const SongOptions &so )
 {
-	std::vector<RString> as;
+	std::vector<std::string> as;
 #define remove_empty_back() if(as.back() == "") { as.pop_back(); }
 	as.push_back(po.GetString());
 	remove_empty_back();
@@ -97,14 +97,14 @@ static void MoveMap( int &sel, IPreference &opt, bool ToSel, const T *mapping, u
 {
 	if( ToSel )
 	{
-		RString sOpt = opt.ToString();
+		std::string sOpt = opt.ToString();
 		// This should really be T, but we can't FromString an enum.
 		float val;
 		FromString( sOpt, val );
 		sel = FindClosestEntry( val, mapping, cnt );
 	} else {
 		// sel -> opt
-		RString sOpt = ToString( mapping[sel] );
+		std::string sOpt = ToString( mapping[sel] );
 		opt.FromString( sOpt );
 	}
 }
@@ -170,29 +170,29 @@ static void MoveNop( int &iSel, bool bToSel, const ConfOption *pConfOption )
 
 // TODO: Write GenerateValueList() function that can use ints and floats. -aj
 
-static void GameChoices( std::vector<RString> &out )
+static void GameChoices( std::vector<std::string> &out )
 {
 	std::vector<const Game*> aGames;
 	GAMEMAN->GetEnabledGames( aGames );
 	for (Game const *g : aGames)
 	{
-		RString sGameName = g->m_szName;
+		std::string sGameName = g->m_szName;
 		out.push_back( sGameName );
 	}
 }
 
 static void GameSel( int &sel, bool ToSel, const ConfOption *pConfOption )
 {
-	std::vector<RString> choices;
+	std::vector<std::string> choices;
 	pConfOption->MakeOptionsList( choices );
 
 	if( ToSel )
 	{
-		const RString sCurGameName = PREFSMAN->GetCurrentGame();
+		const std::string sCurGameName = PREFSMAN->GetCurrentGame();
 
 		sel = 0;
 		for(unsigned i = 0; i < choices.size(); ++i)
-			if( !strcasecmp(choices[i], sCurGameName) )
+			if( !strcasecmp(choices[i].c_str(), sCurGameName.c_str()) )
 				sel = i;
 	} else {
 		std::vector<const Game*> aGames;
@@ -201,13 +201,13 @@ static void GameSel( int &sel, bool ToSel, const ConfOption *pConfOption )
 	}
 }
 
-static void LanguageChoices( std::vector<RString> &out )
+static void LanguageChoices( std::vector<std::string> &out )
 {
-	std::vector<RString> vs;
+	std::vector<std::string> vs;
 	THEME->GetLanguages( vs );
 	SortRStringArray( vs, true );
 
-	for (RString const &s : vs)
+	for (std::string const &s : vs)
 	{
 		const LanguageInfo *pLI = GetLanguageInfo( s );
 		if( pLI )
@@ -219,7 +219,7 @@ static void LanguageChoices( std::vector<RString> &out )
 
 static void Language( int &sel, bool ToSel, const ConfOption *pConfOption )
 {
-	std::vector<RString> vs;
+	std::vector<std::string> vs;
 	THEME->GetLanguages( vs );
 	SortRStringArray( vs, true );
 
@@ -227,12 +227,12 @@ static void Language( int &sel, bool ToSel, const ConfOption *pConfOption )
 	{
 		sel = -1;
 		for( unsigned i=0; sel == -1 && i < vs.size(); ++i )
-			if( !strcasecmp(vs[i], THEME->GetCurLanguage()) )
+			if( !strcasecmp(vs[i].c_str(), THEME->GetCurLanguage().c_str()) )
 				sel = i;
 
 		// If the current language doesn't exist, we'll show BASE_LANGUAGE, so select that.
 		for( unsigned i=0; sel == -1 && i < vs.size(); ++i )
-			if( !strcasecmp(vs[i], SpecialFiles::BASE_LANGUAGE) )
+			if( !strcasecmp(vs[i].c_str(), SpecialFiles::BASE_LANGUAGE.c_str()) )
 				sel = i;
 
 		if( sel == -1 )
@@ -242,7 +242,7 @@ static void Language( int &sel, bool ToSel, const ConfOption *pConfOption )
 			sel = 0;
 		}
 	} else {
-		const RString &sNewLanguage = vs[sel];
+		const std::string &sNewLanguage = vs[sel];
 
 		PREFSMAN->m_sLanguage.Set( sNewLanguage );
 		if( THEME->GetCurLanguage() != sNewLanguage )
@@ -250,10 +250,10 @@ static void Language( int &sel, bool ToSel, const ConfOption *pConfOption )
 	}
 }
 
-static void ThemeChoices( std::vector<RString> &out )
+static void ThemeChoices( std::vector<std::string> &out )
 {
 	THEME->GetSelectableThemeNames( out );
-	for (RString &s : out)
+	for (std::string &s : out)
 		s = THEME->GetThemeDisplayName( s );
 }
 
@@ -266,14 +266,14 @@ static void cache_display_specs()
 	}
 }
 
-static void DisplayResolutionChoices( std::vector<RString> &out )
+static void DisplayResolutionChoices( std::vector<std::string> &out )
 {
 	cache_display_specs();
 	for (DisplaySpec const &iter : display_specs)
 	{
 		if (iter.currentMode() != nullptr)
 		{
-			RString s = ssprintf("%dx%d", iter.currentMode()->width, iter.currentMode()->height);
+			std::string s = ssprintf("%dx%d", iter.currentMode()->width, iter.currentMode()->height);
 			out.push_back(s);
 		}
 	}
@@ -281,28 +281,28 @@ static void DisplayResolutionChoices( std::vector<RString> &out )
 
 static void RequestedTheme( int &sel, bool ToSel, const ConfOption *pConfOption )
 {
-	std::vector<RString> choices;
+	std::vector<std::string> choices;
 	pConfOption->MakeOptionsList( choices );
 
-	std::vector<RString> vsThemeNames;
+	std::vector<std::string> vsThemeNames;
 	THEME->GetSelectableThemeNames( vsThemeNames );
 
 	if( ToSel )
 	{
 		sel = 0;
 		for( unsigned i=1; i<vsThemeNames.size(); i++ )
-			if( !strcasecmp(vsThemeNames[i], PREFSMAN->m_sTheme.Get()) )
+			if( !strcasecmp(vsThemeNames[i].c_str(), PREFSMAN->m_sTheme.Get().c_str()) )
 				sel = i;
 	}
 	else
 	{
-		const RString sNewTheme = vsThemeNames[sel];
+		const std::string sNewTheme = vsThemeNames[sel];
 		PREFSMAN->m_sTheme.Set( sNewTheme ); // OPT_APPLY_THEME will load the theme
 	}
 }
 
 static LocalizedString OFF ("ScreenOptionsMasterPrefs","Off");
-static void AnnouncerChoices( std::vector<RString> &out )
+static void AnnouncerChoices( std::vector<std::string> &out )
 {
 	ANNOUNCER->GetAnnouncerNames( out );
 	out.insert( out.begin(), OFF );
@@ -310,32 +310,32 @@ static void AnnouncerChoices( std::vector<RString> &out )
 
 static void Announcer( int &sel, bool ToSel, const ConfOption *pConfOption )
 {
-	std::vector<RString> choices;
+	std::vector<std::string> choices;
 	pConfOption->MakeOptionsList( choices );
 
 	if( ToSel )
 	{
 		sel = 0;
 		for( unsigned i=1; i<choices.size(); i++ )
-			if( !strcasecmp(choices[i], ANNOUNCER->GetCurAnnouncerName()) )
+			if( !strcasecmp(choices[i].c_str(), ANNOUNCER->GetCurAnnouncerName().c_str()) )
 				sel = i;
 	}
 	else
 	{
-		const RString sNewAnnouncer = sel? choices[sel]:RString("");
+		const std::string sNewAnnouncer = sel? choices[sel]:std::string("");
 		ANNOUNCER->SwitchAnnouncer( sNewAnnouncer );
 		PREFSMAN->m_sAnnouncer.Set( sNewAnnouncer );
 	}
 }
 
-static void DefaultNoteSkinChoices( std::vector<RString> &out )
+static void DefaultNoteSkinChoices( std::vector<std::string> &out )
 {
 	NOTESKIN->GetNoteSkinNames( out );
 }
 
 static void DefaultNoteSkin( int &sel, bool ToSel, const ConfOption *pConfOption )
 {
-	std::vector<RString> choices;
+	std::vector<std::string> choices;
 	pConfOption->MakeOptionsList( choices );
 
 	if( ToSel )
@@ -344,7 +344,7 @@ static void DefaultNoteSkin( int &sel, bool ToSel, const ConfOption *pConfOption
 		po.FromString( PREFSMAN->m_sDefaultModifiers );
 		sel = 0;
 		for( unsigned i=0; i < choices.size(); i++ )
-			if( !strcasecmp(choices[i], po.m_sNoteSkin) )
+			if( !strcasecmp(choices[i].c_str(), po.m_sNoteSkin.c_str()) )
 				sel = i;
 	}
 	else
@@ -357,7 +357,7 @@ static void DefaultNoteSkin( int &sel, bool ToSel, const ConfOption *pConfOption
 	}
 }
 
-static void DefaultFailChoices(std::vector<RString>& out)
+static void DefaultFailChoices(std::vector<std::string>& out)
 {
 	out.push_back("Immediate");
 	out.push_back("ImmediateContinue");
@@ -957,14 +957,14 @@ int ConfOption::GetEffects() const
 	return m_iEffects | OPT_SAVE_PREFERENCES;
 }
 
-ConfOption *ConfOption::Find( RString name )
+ConfOption *ConfOption::Find( std::string name )
 {
 	InitializeConfOptions();
 	for( unsigned i = 0; i < g_ConfOptions.size(); ++i )
 	{
 		ConfOption *opt = &g_ConfOptions[i];
-		RString match(opt->name);
-		if( match.CompareNoCase(name) )
+		std::string match(opt->name);
+		if( !StringUtil::EqualsNoCase(match, name) )
 			continue;
 		return opt;
 	}
@@ -981,7 +981,7 @@ void ConfOption::UpdateAvailableOptions()
 	}
 }
 
-void ConfOption::MakeOptionsList( std::vector<RString> &out ) const
+void ConfOption::MakeOptionsList( std::vector<std::string> &out ) const
 {
 	out = names;
 }

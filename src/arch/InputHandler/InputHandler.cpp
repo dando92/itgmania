@@ -123,10 +123,10 @@ static LocalizedString PGUP	( "DeviceButton", "PgUp" );
 static LocalizedString PGDN	( "DeviceButton", "PgDn" );
 static LocalizedString BACKSLASH	( "DeviceButton", "Backslash" );
 
-RString InputHandler::GetDeviceSpecificInputString( const DeviceInput &di )
+std::string InputHandler::GetDeviceSpecificInputString( const DeviceInput &di )
 {
 	if( di.device == InputDevice_Invalid )
-		return RString();
+		return std::string();
 
 	if( di.device == DEVICE_KEYBOARD )
 	{
@@ -138,13 +138,13 @@ RString InputHandler::GetDeviceSpecificInputString( const DeviceInput &di )
 			return InputDeviceToString( di.device ) + " " + Capitalize( WStringToRString(std::wstring()+c) );
 	}
 
-	RString s = DeviceButtonToString( di.button );
+	std::string s = DeviceButtonToString( di.button );
 	if( di.device != DEVICE_KEYBOARD )
 		s = InputDeviceToString( di.device ) + " " + s;
 	return s;
 }
 
-RString InputHandler::GetLocalizedInputString( const DeviceInput &di )
+std::string InputHandler::GetLocalizedInputString( const DeviceInput &di )
 {
 	switch( di.button )
 	{
@@ -173,16 +173,16 @@ RString InputHandler::GetLocalizedInputString( const DeviceInput &di )
 DriverList InputHandler::m_pDriverList;
 
 static LocalizedString INPUT_HANDLERS_EMPTY( "Arch", "Input Handlers cannot be empty." );
-void InputHandler::Create( const RString &drivers_, std::vector<InputHandler *> &Add )
+void InputHandler::Create( const std::string &drivers_, std::vector<InputHandler *> &Add )
 {
-	const RString drivers = drivers_.empty()? RString(DEFAULT_INPUT_DRIVER_LIST):drivers_;
-	std::vector<RString> DriversToTry;
+	const std::string drivers = drivers_.empty()? std::string(DEFAULT_INPUT_DRIVER_LIST):drivers_;
+	std::vector<std::string> DriversToTry;
 	split( drivers, ",", DriversToTry, true );
 
 	if( DriversToTry.empty() )
 		RageException::Throw( "%s", INPUT_HANDLERS_EMPTY.GetValue().c_str() );
 
-	for (RString const &s : DriversToTry)
+	for (std::string const &s : DriversToTry)
 	{
 		RageDriver *pDriver = InputHandler::m_pDriverList.Create( s );
 		if( pDriver == nullptr )

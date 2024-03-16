@@ -38,7 +38,7 @@ RageFileObjInflate::RageFileObjInflate( RageFileBasic *pFile, int iUncompressedS
 	if( err == Z_MEM_ERROR )
 		RageException::Throw( "inflateInit2( %i ): out of memory.", -MAX_WBITS );
 	if( err != Z_OK )
-		WARN( ssprintf("Huh? inflateInit2() err = %i", err) );
+		WARN( ssprintf("Huh? inflateInit2() err = %i", err).c_str() );
 
 	decomp_buf_ptr = decomp_buf;
 	m_iFilePos = 0;
@@ -74,7 +74,7 @@ RageFileObjInflate::~RageFileObjInflate()
 
 	int err = inflateEnd( m_pInflate );
 	if( err != Z_OK )
-		WARN( ssprintf("Huh? inflateEnd() err = %i", err) );
+		WARN( ssprintf("Huh? inflateEnd() err = %i", err).c_str() );
 
 	delete m_pInflate;
 }
@@ -129,7 +129,7 @@ int RageFileObjInflate::ReadInternal( void *buf, std::size_t bytes )
 		case Z_OK:
 			break;
 		default:
-			WARN( ssprintf("Huh? inflate err %i", err) );
+			WARN( ssprintf("Huh? inflate err %i", err).c_str() );
 		}
 
 		const int used = (char *)m_pInflate->next_in - decomp_buf_ptr;
@@ -206,7 +206,7 @@ RageFileObjDeflate::RageFileObjDeflate( RageFileBasic *pFile )
 	if( err == Z_MEM_ERROR )
 		RageException::Throw( "inflateInit2( %i ): out of memory.", -MAX_WBITS );
 	if( err != Z_OK )
-		WARN( ssprintf("Huh? inflateInit2() err = %i", err) );
+		WARN( ssprintf("Huh? inflateInit2() err = %i", err).c_str() );
 
 }
 
@@ -219,7 +219,7 @@ RageFileObjDeflate::~RageFileObjDeflate()
 
 	int err = deflateEnd( m_pDeflate );
 	if( err != Z_OK )
-		WARN( ssprintf("Huh? deflateEnd() err = %i", err) );
+		WARN( ssprintf("Huh? deflateEnd() err = %i", err).c_str() );
 
 	delete m_pDeflate;
 }
@@ -314,7 +314,7 @@ int RageFileObjDeflate::FlushInternal()
  * Parse a .gz file, check the header CRC16 if present, and return the data
  * CRC32 and a decompressor.  pFile will be deleted.
  */
-RageFileObjInflate *GunzipFile( RageFileBasic *pFile_, RString &sError, std::uint32_t *iCRC32 )
+RageFileObjInflate *GunzipFile( RageFileBasic *pFile_, std::string &sError, std::uint32_t *iCRC32 )
 {
 	std::unique_ptr<RageFileBasic> pFile(pFile_);
 
@@ -516,7 +516,7 @@ int RageFileObjGzip::Finish()
 
 #include "RageFileDriverMemory.h"
 
-void GzipString( const RString &sIn, RString &sOut )
+void GzipString( const std::string &sIn, std::string &sOut )
 {
 	/* Gzip it. */
 	RageFileObjMem mem;
@@ -528,7 +528,7 @@ void GzipString( const RString &sIn, RString &sOut )
 	sOut = mem.GetString();
 }
 
-bool GunzipString( const RString &sIn, RString &sOut, RString &sError )
+bool GunzipString( const std::string &sIn, std::string &sOut, std::string &sError )
 {
 	RageFileObjMem *mem = new RageFileObjMem;
 	mem->PutString( sIn );

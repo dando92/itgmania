@@ -243,16 +243,16 @@ void LightsDriver_Linux_stac::HandleState(const LightsState *ls, StacDevice *dev
 {
     //check to see which game we are running as it can change during gameplay.
     const InputScheme *pInput = &GAMESTATE->GetCurrentGame()->m_InputScheme;
-    RString sInputName = pInput->m_szName;
+    std::string sInputName = pInput->m_szName;
 
-    if (sInputName.EqualsNoCase("dance"))
+    if (StringUtil::EqualsNoCase(sInputName, "dance"))
     {
         dev->SetInBuffer(STAC_LIGHTINDEX_BTN1, ls->m_bGameButtonLights[ctrlNum][DANCE_BUTTON_UP]);
         dev->SetInBuffer(STAC_LIGHTINDEX_BTN2, ls->m_bGameButtonLights[ctrlNum][DANCE_BUTTON_DOWN]);
         dev->SetInBuffer(STAC_LIGHTINDEX_BTN3, ls->m_bGameButtonLights[ctrlNum][DANCE_BUTTON_LEFT]);
         dev->SetInBuffer(STAC_LIGHTINDEX_BTN4, ls->m_bGameButtonLights[ctrlNum][DANCE_BUTTON_RIGHT]);
     }
-    else if (sInputName.EqualsNoCase("pump"))
+    else if (StringUtil::EqualsNoCase(sInputName, "pump"))
     {
         dev->SetInBuffer(STAC_LIGHTINDEX_BTN1, ls->m_bGameButtonLights[ctrlNum][PUMP_BUTTON_UPLEFT]);
         dev->SetInBuffer(STAC_LIGHTINDEX_BTN2, ls->m_bGameButtonLights[ctrlNum][PUMP_BUTTON_UPRIGHT]);

@@ -30,24 +30,24 @@
 static struct FileDriverEntry_DIR: public FileDriverEntry
 {
 	FileDriverEntry_DIR(): FileDriverEntry( "DIR" ) { }
-	RageFileDriver *Create( const RString &sRoot ) const { return new RageFileDriverDirect( sRoot ); }
+	RageFileDriver *Create( const std::string &sRoot ) const { return new RageFileDriverDirect( sRoot ); }
 } const g_RegisterDriver;
 
 /* Direct read-only filesystem access: */
 static struct FileDriverEntry_DIRRO: public FileDriverEntry
 {
 	FileDriverEntry_DIRRO(): FileDriverEntry( "DIRRO" ) { }
-	RageFileDriver *Create( const RString &sRoot ) const { return new RageFileDriverDirectReadOnly( sRoot ); }
+	RageFileDriver *Create( const std::string &sRoot ) const { return new RageFileDriverDirectReadOnly( sRoot ); }
 } const g_RegisterDriver2;
 
-RageFileDriverDirect::RageFileDriverDirect( const RString &sRoot ):
+RageFileDriverDirect::RageFileDriverDirect( const std::string &sRoot ):
 	RageFileDriver( new DirectFilenameDB(sRoot) )
 {
 	Remount( sRoot );
 }
 
 
-static RString MakeTempFilename( const RString &sPath )
+static std::string MakeTempFilename( const std::string &sPath )
 {
 	/* "Foo/bar/baz" -> "Foo/bar/new.baz.new".  Both prepend and append: we don't
 	 * want a wildcard search for the filename to match (foo.txt.new matches foo.txt*),
@@ -56,12 +56,12 @@ static RString MakeTempFilename( const RString &sPath )
 	return Dirname(sPath) + "new." + Basename(sPath) + ".new";
 }
 
-static RageFileObjDirect *MakeFileObjDirect( RString sPath, int iMode, int &iError )
+static RageFileObjDirect *MakeFileObjDirect( std::string sPath, int iMode, int &iError )
 {
 	int iFD;
 	if( iMode & RageFile::READ )
 	{
-		iFD = DoOpen( sPath, O_BINARY|O_RDONLY, 0666 );
+		iFD = DoOpen( sPath.c_str(), O_BINARY|O_RDONLY, 0666 );
 
 		/* XXX: Windows returns EACCES if we try to open a file on a CDROM that isn't
 		 * ready, instead of something like ENODEV.  We want to return that case as
@@ -69,14 +69,14 @@ static RageFileObjDirect *MakeFileObjDirect( RString sPath, int iMode, int &iErr
 	}
 	else
 	{
-		RString sOut;
+		std::string sOut;
 		if( iMode & RageFile::STREAMED )
 			sOut = sPath;
 		else
 			sOut = MakeTempFilename(sPath);
 
 		/* Open a temporary file for writing. */
-		iFD = DoOpen( sOut, O_BINARY|O_WRONLY|O_CREAT|O_TRUNC, 0666 );
+		iFD = DoOpen( sOut.c_str(), O_BINARY|O_WRONLY|O_CREAT|O_TRUNC, 0666 );
 	}
 
 	if( iFD == -1 )
@@ -98,7 +98,7 @@ static RageFileObjDirect *MakeFileObjDirect( RString sPath, int iMode, int &iErr
 	return new RageFileObjDirect( sPath, iFD, iMode );
 }
 
-RageFileBasic *RageFileDriverDirect::Open( const RString &sPath_, int iMode, int &iError )
+RageFileBasic *RageFileDriverDirect::Open( const std::string &sPath_, int iMode, int &iError )
 {
 	if( m_sRoot == "(empty)" )
 	{
@@ -106,8 +106,8 @@ RageFileBasic *RageFileDriverDirect::Open( const RString &sPath_, int iMode, int
 		return nullptr;
 	}
 
-	RString sPath = sPath_;
-	ASSERT( sPath.size() && sPath[0] == '/' );
+	std::string sPath = sPath_;
+	ASSERT( !sPath.empty() && sPath[0] == '/' );
 
 	/* This partially resolves.  For example, if "abc/def" exists, and we're opening
 	 * "ABC/DEF/GHI/jkl/mno", this will resolve it to "abc/def/GHI/jkl/mno"; we'll
@@ -116,7 +116,7 @@ RageFileBasic *RageFileDriverDirect::Open( const RString &sPath_, int iMode, int
 
 	if( iMode & RageFile::WRITE )
 	{
-		const RString dir = Dirname(sPath);
+		const std::string dir = Dirname(sPath);
 		if( this->GetFileType(dir) != RageFileManager::TYPE_DIR )
 			CreateDirectories( m_sRoot + dir );
 	}
@@ -124,15 +124,15 @@ RageFileBasic *RageFileDriverDirect::Open( const RString &sPath_, int iMode, int
 	return MakeFileObjDirect( m_sRoot + sPath, iMode, iError );
 }
 
-bool RageFileDriverDirect::Move( const RString &sOldPath_, const RString &sNewPath_ )
+bool RageFileDriverDirect::Move( const std::string &sOldPath_, const std::string &sNewPath_ )
 {
 	if( m_sRoot == "(empty)" )
 	{
 		return false;
 	}
 
-	RString sOldPath = sOldPath_;
-	RString sNewPath = sNewPath_;
+	std::string sOldPath = sOldPath_;
+	std::string sNewPath = sNewPath_;
 	FDB->ResolvePath( sOldPath );
 	FDB->ResolvePath( sNewPath );
 
@@ -140,15 +140,15 @@ bool RageFileDriverDirect::Move( const RString &sOldPath_, const RString &sNewPa
 		return false;
 
 	{
-		const RString sDir = Dirname(sNewPath);
+		const std::string sDir = Dirname(sNewPath);
 		CreateDirectories( m_sRoot + sDir );
 	}
 	int size = FDB->GetFileSize( sOldPath );
 	int hash = FDB->GetFileHash( sOldPath );
-	TRACE( ssprintf("rename \"%s\" -> \"%s\"", (m_sRoot + sOldPath).c_str(), (m_sRoot + sNewPath).c_str()) );
-	if( DoRename(m_sRoot + sOldPath, m_sRoot + sNewPath) == -1 )
+	TRACE( ssprintf("rename \"%s\" -> \"%s\"", (m_sRoot + sOldPath).c_str(), (m_sRoot + sNewPath).c_str()).c_str() );
+	if( DoRename((m_sRoot + sOldPath).c_str(), (m_sRoot + sNewPath).c_str()) == -1 )
 	{
-		WARN( ssprintf("rename(%s,%s) failed: %s", (m_sRoot + sOldPath).c_str(), (m_sRoot + sNewPath).c_str(), strerror(errno)) );
+		WARN( ssprintf("rename(%s,%s) failed: %s", (m_sRoot + sOldPath).c_str(), (m_sRoot + sNewPath).c_str(), strerror(errno)).c_str() );
 		return false;
 	}
 
@@ -157,33 +157,33 @@ bool RageFileDriverDirect::Move( const RString &sOldPath_, const RString &sNewPa
 	return true;
 }
 
-bool RageFileDriverDirect::Remove( const RString &sPath_ )
+bool RageFileDriverDirect::Remove( const std::string &sPath_ )
 {
 	if( m_sRoot == "(empty)" )
 	{
 		return false;
 	}
 
-	RString sPath = sPath_;
+	std::string sPath = sPath_;
 	FDB->ResolvePath( sPath );
 	RageFileManager::FileType type = this->GetFileType(sPath);
 	switch( type )
 	{
 	case RageFileManager::TYPE_FILE:
-		TRACE( ssprintf("remove '%s'", (m_sRoot + sPath).c_str()) );
-		if( DoRemove(m_sRoot + sPath) == -1 )
+		TRACE( ssprintf("remove '%s'", (m_sRoot + sPath).c_str()).c_str() );
+		if( DoRemove((m_sRoot + sPath).c_str()) == -1 )
 		{
-			WARN( ssprintf("remove(%s) failed: %s", (m_sRoot + sPath).c_str(), strerror(errno)) );
+			WARN( ssprintf("remove(%s) failed: %s", (m_sRoot + sPath).c_str(), strerror(errno)).c_str() );
 			return false;
 		}
 		FDB->DelFile( sPath );
 		return true;
 
 	case RageFileManager::TYPE_DIR:
-		TRACE( ssprintf("rmdir '%s'", (m_sRoot + sPath).c_str()) );
-		if( DoRmdir(m_sRoot + sPath) == -1 )
+		TRACE( ssprintf("rmdir '%s'", (m_sRoot + sPath).c_str()).c_str() );
+		if( DoRmdir((m_sRoot + sPath).c_str()) == -1 )
 		{
-			WARN( ssprintf("rmdir(%s) failed: %s", (m_sRoot + sPath).c_str(), strerror(errno)) );
+			WARN( ssprintf("rmdir(%s) failed: %s", (m_sRoot + sPath).c_str(), strerror(errno)).c_str() );
 			return false;
 		}
 		FDB->DelFile( sPath );
@@ -210,7 +210,7 @@ RageFileObjDirect *RageFileObjDirect::Copy() const
 	return ret;
 }
 
-bool RageFileDriverDirect::Remount( const RString &sPath )
+bool RageFileDriverDirect::Remount( const std::string &sPath )
 {
 	m_sRoot = sPath;
 	((DirectFilenameDB *) FDB)->SetRoot( sPath );
@@ -225,9 +225,9 @@ bool RageFileDriverDirect::Remount( const RString &sPath )
 }
 
 /* The DIRRO driver is just like DIR, except writes are disallowed. */
-RageFileDriverDirectReadOnly::RageFileDriverDirectReadOnly( const RString &sRoot ):
+RageFileDriverDirectReadOnly::RageFileDriverDirectReadOnly( const std::string &sRoot ):
 	RageFileDriverDirect( sRoot ) { }
-RageFileBasic *RageFileDriverDirectReadOnly::Open( const RString &sPath, int iMode, int &iError )
+RageFileBasic *RageFileDriverDirectReadOnly::Open( const std::string &sPath, int iMode, int &iError )
 {
 	if( iMode & RageFile::WRITE )
 	{
@@ -237,11 +237,11 @@ RageFileBasic *RageFileDriverDirectReadOnly::Open( const RString &sPath, int iMo
 
 	return RageFileDriverDirect::Open( sPath, iMode, iError );
 }
-bool RageFileDriverDirectReadOnly::Move( const RString & /* sOldPath */, const RString & /* sNewPath */ ) { return false; }
-bool RageFileDriverDirectReadOnly::Remove( const RString & /* sPath */ ) { return false; }
+bool RageFileDriverDirectReadOnly::Move( const std::string & /* sOldPath */, const std::string & /* sNewPath */ ) { return false; }
+bool RageFileDriverDirectReadOnly::Remove( const std::string & /* sPath */ ) { return false; }
 
 static const unsigned int BUFSIZE = 1024*64;
-RageFileObjDirect::RageFileObjDirect( const RString &sPath, int iFD, int iMode )
+RageFileObjDirect::RageFileObjDirect( const std::string &sPath, int iFD, int iMode )
 {
 	m_sPath = sPath;
 	m_iFD = iFD;
@@ -256,7 +256,7 @@ RageFileObjDirect::RageFileObjDirect( const RString &sPath, int iFD, int iMode )
 namespace
 {
 #if !defined(WIN32)
-	bool FlushDir( RString sPath, RString &sError )
+	bool FlushDir( std::string sPath, std::string &sError )
 	{
 		/* Wait for the directory to be flushed. */
 		int dirfd = open( sPath, O_RDONLY );
@@ -277,7 +277,7 @@ namespace
 		return true;
 	}
 #else
-	bool FlushDir( RString /* sPath */, RString & /* sError */ )
+	bool FlushDir( std::string /* sPath */, std::string & /* sError */ )
 	{
 		return true;
 	}
@@ -301,15 +301,15 @@ bool RageFileObjDirect::FinalFlush()
 	/* Force a kernel buffer flush. */
 	if( fsync( m_iFD ) == -1 )
 	{
-		WARN( ssprintf("Error synchronizing %s: %s", this->m_sPath.c_str(), strerror(errno)) );
+		WARN( ssprintf("Error synchronizing %s: %s", this->m_sPath.c_str(), strerror(errno)).c_str() );
 		SetError( strerror(errno) );
 		return false;
 	}
 
-	RString sError;
+	std::string sError;
 	if( !FlushDir(Dirname(m_sPath), sError) )
 	{
-		WARN( ssprintf("Error synchronizing fsync(%s dir): %s", this->m_sPath.c_str(), sError.c_str()) );
+		WARN( ssprintf("Error synchronizing fsync(%s dir): %s", this->m_sPath.c_str(), sError.c_str()).c_str() );
 		SetError( sError );
 		return false;
 	}
@@ -325,7 +325,7 @@ RageFileObjDirect::~RageFileObjDirect()
 	{
 		if( DoClose( m_iFD ) == -1 )
 		{
-			WARN( ssprintf("Error closing %s: %s", this->m_sPath.c_str(), strerror(errno)) );
+			WARN( ssprintf("Error closing %s: %s", this->m_sPath.c_str(), strerror(errno)).c_str() );
 			SetError( strerror(errno) );
 			bFailed = true;
 		}
@@ -348,8 +348,8 @@ RageFileObjDirect::~RageFileObjDirect()
 		 * intermediate state a JFS might restore the file we're writing (in the
 		 * case of a crash/powerdown) to an empty or partial file. */
 
-		RString sOldPath = MakeTempFilename(m_sPath);
-		RString sNewPath = m_sPath;
+		std::string sOldPath = MakeTempFilename(m_sPath);
+		std::string sNewPath = m_sPath;
 
 #if defined(WIN32)
 		if( WinMoveFile(DoPathReplace(sOldPath), DoPathReplace(sNewPath)) )
@@ -357,8 +357,8 @@ RageFileObjDirect::~RageFileObjDirect()
 
 		/* We failed. */
 		int err = GetLastError();
-		const RString error = werr_ssprintf( err, "Error renaming \"%s\" to \"%s\"", sOldPath.c_str(), sNewPath.c_str() );
-		WARN( ssprintf("%s", error.c_str()) );
+		const std::string error = werr_ssprintf( err, "Error renaming \"%s\" to \"%s\"", sOldPath.c_str(), sNewPath.c_str() );
+		WARN( ssprintf("%s", error.c_str()).c_str() );
 		SetError( error );
 		break;
 #else
@@ -373,7 +373,7 @@ RageFileObjDirect::~RageFileObjDirect()
 
 		if( m_iMode & RageFile::SLOW_FLUSH )
 		{
-			RString sError;
+			std::string sError;
 			if( !FlushDir(Dirname(m_sPath), sError) )
 			{
 				WARN( ssprintf("Error synchronizing fsync(%s dir): %s", this->m_sPath.c_str(), sError.c_str()) );
@@ -387,7 +387,7 @@ RageFileObjDirect::~RageFileObjDirect()
 	} while(0);
 
 	// The write or the rename failed. Delete the incomplete temporary file.
-	DoRemove( MakeTempFilename(m_sPath) );
+	DoRemove( MakeTempFilename(m_sPath).c_str() );
 }
 
 int RageFileObjDirect::ReadInternal( void *pBuf, std::size_t iBytes )

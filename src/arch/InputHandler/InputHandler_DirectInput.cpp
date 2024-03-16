@@ -235,7 +235,7 @@ static int GetNumJoysticksSlow()
 	HRESULT hr = g_dinput->EnumDevices( DI8DEVCLASS_GAMECTRL, CountDevicesCallback, &iCount, DIEDFL_ATTACHEDONLY );
 	if( hr != DI_OK )
 	{
-		LOG->Warn( hr_ssprintf(hr, "g_dinput->EnumDevices") );
+		LOG->Warn( hr_ssprintf(hr, "g_dinput->EnumDevices").c_str() );
 	}
 	return iCount;
 }
@@ -271,23 +271,23 @@ InputHandler_DInput::InputHandler_DInput()
 	AppInstance inst;
 	HRESULT hr = DirectInput8Create(inst.Get(), DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID *) &g_dinput, nullptr);
 	if( hr != DI_OK )
-		RageException::Throw( hr_ssprintf(hr, "InputHandler_DInput: DirectInputCreate") );
+		RageException::Throw( hr_ssprintf(hr, "InputHandler_DInput: DirectInputCreate").c_str() );
 
 	LOG->Trace( "InputHandler_DInput: IDirectInput::EnumDevices(DIDEVTYPE_KEYBOARD)" );
 	hr = g_dinput->EnumDevices( DI8DEVCLASS_KEYBOARD, EnumDevicesCallback, nullptr, DIEDFL_ATTACHEDONLY );
 	if( hr != DI_OK )
-		RageException::Throw( hr_ssprintf(hr, "InputHandler_DInput: IDirectInput::EnumDevices") );
+		RageException::Throw( hr_ssprintf(hr, "InputHandler_DInput: IDirectInput::EnumDevices").c_str() );
 
 	LOG->Trace( "InputHandler_DInput: IDirectInput::EnumDevices(DIDEVTYPE_JOYSTICK)" );
 	hr = g_dinput->EnumDevices( DI8DEVCLASS_GAMECTRL, EnumDevicesCallback, nullptr, DIEDFL_ATTACHEDONLY );
 	if( hr != DI_OK )
-		RageException::Throw( hr_ssprintf(hr, "InputHandler_DInput: IDirectInput::EnumDevices") );
+		RageException::Throw( hr_ssprintf(hr, "InputHandler_DInput: IDirectInput::EnumDevices").c_str() );
 
 	// mouse
 	LOG->Trace( "InputHandler_DInput: IDirectInput::EnumDevices(DIDEVTYPE_MOUSE)" );
 	hr = g_dinput->EnumDevices( DI8DEVCLASS_POINTER, EnumDevicesCallback, nullptr, DIEDFL_ATTACHEDONLY );
 	if( hr != DI_OK )
-		RageException::Throw( hr_ssprintf(hr, "InputHandler_DInput: IDirectInput::EnumDevices") );
+		RageException::Throw( hr_ssprintf(hr, "InputHandler_DInput: IDirectInput::EnumDevices").c_str() );
 
 	for( unsigned i = 0; i < Devices.size(); ++i )
 	{
@@ -419,7 +419,7 @@ static HRESULT GetDeviceState( LPDIRECTINPUTDEVICE8 dev, int size, void *ptr )
 		hr = dev->Acquire();
 		if( hr != DI_OK )
 		{
-			LOG->Trace( hr_ssprintf(hr, "?") );
+			LOG->Trace( hr_ssprintf(hr, "?").c_str() );
 			return hr;
 		}
 
@@ -447,7 +447,7 @@ void InputHandler_DInput::UpdatePolled( DIDevice &device, const RageTimer &tm )
 
 			if( hr != DI_OK )
 			{
-				LOG->MapLog( "UpdatePolled", hr_ssprintf(hr, "Failures on polled keyboard update") );
+				LOG->MapLog( "UpdatePolled", hr_ssprintf(hr, "Failures on polled keyboard update").c_str() );
 				return;
 			}
 
@@ -614,7 +614,7 @@ void InputHandler_DInput::UpdateBuffered( DIDevice &device, const RageTimer &tm 
 
 	if( hr != DI_OK )
 	{
-		LOG->Trace( hr_ssprintf(hr, "UpdateBuffered: IDirectInputDevice2_GetDeviceData") );
+		LOG->Trace( hr_ssprintf(hr, "UpdateBuffered: IDirectInputDevice2_GetDeviceData").c_str() );
 		return;
 	}
 
@@ -938,7 +938,7 @@ bool InputHandler_DInput::DevicesChanged()
 void InputHandler_DInput::InputThreadMain()
 {
 	if(!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST))
-		LOG->Warn(werr_ssprintf(GetLastError(), "Failed to set DirectInput thread priority"));
+		LOG->Warn(werr_ssprintf(GetLastError(), "Failed to set DirectInput thread priority").c_str());
 
 	// Enable priority boosting.
 	SetThreadPriorityBoost( GetCurrentThread(), FALSE );
@@ -970,7 +970,7 @@ void InputHandler_DInput::InputThreadMain()
 			int ret = WaitForSingleObjectEx( Handle, 50, true );
 			if( ret == -1 )
 			{
-				LOG->Trace( werr_ssprintf(GetLastError(), "WaitForSingleObjectEx failed") );
+				LOG->Trace( werr_ssprintf(GetLastError(), "WaitForSingleObjectEx failed").c_str() );
 				continue;
 			}
 
@@ -1042,7 +1042,7 @@ static wchar_t ScancodeAndKeysToChar( DWORD scancode, unsigned char keys[256] )
 		// iNum == 2 will happen only for dead keys. See MSDN for ToAsciiEx.
 		if( iNum == 1 )
 		{
-			RString s = RString()+(char)result[0];
+			std::string s = std::string()+(char)result[0];
 			return ConvertCodepageToWString( s, CP_ACP )[0];
 		}
 	}

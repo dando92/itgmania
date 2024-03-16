@@ -16,7 +16,7 @@ extern "C" {
 #include <vector>
 
 
-static RString GetUSBDevicePath( int iNum )
+static std::string GetUSBDevicePath( int iNum )
 {
 	GUID guid;
 	HidD_GetHidGuid( &guid );
@@ -30,7 +30,7 @@ static RString GetUSBDevicePath( int iNum )
 		nullptr, &guid, iNum, &DeviceInterface) )
 	{
 		SetupDiDestroyDeviceInfoList( DeviceInfo );
-		return RString();
+		return std::string();
 	}
 
 	unsigned long iSize;
@@ -39,7 +39,7 @@ static RString GetUSBDevicePath( int iNum )
 	PSP_INTERFACE_DEVICE_DETAIL_DATA DeviceDetail = (PSP_INTERFACE_DEVICE_DETAIL_DATA) malloc( iSize );
 	DeviceDetail->cbSize = sizeof(SP_INTERFACE_DEVICE_DETAIL_DATA);
 
-	RString sRet;
+	std::string sRet;
 	if( SetupDiGetDeviceInterfaceDetail(DeviceInfo, &DeviceInterface,
 		DeviceDetail, iSize, &iSize, nullptr) )
 		sRet = DeviceDetail->DevicePath;
@@ -53,10 +53,10 @@ bool USBDevice::Open( int iVID, int iPID, int iBlockSize, int iNum, void (*pfnIn
 {
 	DWORD iIndex = 0;
 
-	RString path;
+	std::string path;
 	while( (path = GetUSBDevicePath(iIndex++)) != "" )
 	{
-		HANDLE h = CreateFile( path, GENERIC_READ,
+		HANDLE h = CreateFile( path.c_str(), GENERIC_READ,
 			FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, 0, nullptr );
 
 		if( h == INVALID_HANDLE_VALUE )
@@ -126,7 +126,7 @@ WindowsFileIO::~WindowsFileIO()
 	delete[] m_pBuffer;
 }
 
-bool WindowsFileIO::Open( RString path, int iBlockSize )
+bool WindowsFileIO::Open( std::string path, int iBlockSize )
 {
 	LOG->Trace( "WindowsFileIO::open(%s)", path.c_str() );
 	m_iBlockSize = iBlockSize;
@@ -138,7 +138,7 @@ bool WindowsFileIO::Open( RString path, int iBlockSize )
 	if( m_Handle != INVALID_HANDLE_VALUE )
 		CloseHandle( m_Handle );
 
-	m_Handle = CreateFile( path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+	m_Handle = CreateFile( path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
 		nullptr, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, nullptr );
 
 	if( m_Handle == INVALID_HANDLE_VALUE )
@@ -172,7 +172,7 @@ int WindowsFileIO::finish_read( void *p )
 
 	if( iRet == 0 )
 	{
-		LOG->Warn( werr_ssprintf(GetLastError(), "Error reading USB device") );
+		LOG->Warn( werr_ssprintf(GetLastError(), "Error reading USB device").c_str() );
 		return -1;
 	}
 
@@ -203,7 +203,7 @@ int WindowsFileIO::read_several(const std::vector<WindowsFileIO *> &sources, voi
 
 	if( ret == -1 )
 	{
-		LOG->Trace( werr_ssprintf(GetLastError(), "WaitForMultipleObjectsEx failed") );
+		LOG->Trace( werr_ssprintf(GetLastError(), "WaitForMultipleObjectsEx failed").c_str() );
 		return -1;
 	}
 

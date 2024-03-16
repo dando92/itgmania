@@ -69,7 +69,7 @@ public:
 			// Drop the trailing ", "
 			msg.resize( msg.size() - 2 );
 
-			ASSERT_M( false, msg.c_str() );
+			ASSERT_M( false, msg );
 		}
 	}
 

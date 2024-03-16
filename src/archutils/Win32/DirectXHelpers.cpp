@@ -2,14 +2,14 @@
 #include "DirectXHelpers.h"
 #include "RageUtil.h"
 
-RString hr_ssprintf( int hr, const char *fmt, ... )
+std::string hr_ssprintf( int hr, const char *fmt, ... )
 {
 	va_list	va;
 	va_start(va, fmt);
-	RString s = vssprintf( fmt, va );
+	const std::string s = vssprintf( fmt, va );
 	va_end(va);
 
-	const char *szError = GetErrorString( hr );
+	const char *szError = GetErrorString( hr ).c_str();
 	return s + ssprintf( " (%s)", szError );
 }
 
@@ -23,7 +23,7 @@ RString hr_ssprintf( int hr, const char *fmt, ... )
 
 #define DXERRMSG(hrcode, dummy) case hrcode: return #hrcode;
 
-RString GetErrorString(HRESULT hr)
+std::string GetErrorString(HRESULT hr)
 {
 	switch (hr)
 	{

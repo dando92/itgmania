@@ -147,8 +147,8 @@ void SongUtil::GetSteps(
 	Difficulty dc,
 	int iMeterLow,
 	int iMeterHigh,
-	const RString &sDescription,
-	const RString &sCredit,
+	const std::string &sDescription,
+	const std::string &sCredit,
 	bool bIncludeAutoGen,
 	unsigned uHash,
 	int iMaxToGet
@@ -194,8 +194,8 @@ Steps* SongUtil::GetOneSteps(
 	Difficulty dc,
 	int iMeterLow,
 	int iMeterHigh,
-	const RString &sDescription,
-	const RString &sCredit,
+	const std::string &sDescription,
+	const std::string &sCredit,
 	unsigned uHash,
 	bool bIncludeAutoGen
 	)
@@ -244,7 +244,7 @@ Steps* SongUtil::GetStepsByMeter( const Song *pSong, StepsType st, int iMeterLow
 	return nullptr;
 }
 
-Steps* SongUtil::GetStepsByDescription( const Song *pSong, StepsType st, RString sDescription )
+Steps* SongUtil::GetStepsByDescription( const Song *pSong, StepsType st, std::string sDescription )
 {
 	std::vector<Steps*> vNotes;
 	GetSteps( pSong, vNotes, st, Difficulty_Invalid, -1, -1, sDescription, "" );
@@ -254,7 +254,7 @@ Steps* SongUtil::GetStepsByDescription( const Song *pSong, StepsType st, RString
 		return vNotes[0];
 }
 
-Steps* SongUtil::GetStepsByCredit( const Song *pSong, StepsType st, RString sCredit )
+Steps* SongUtil::GetStepsByCredit( const Song *pSong, StepsType st, std::string sCredit )
 {
 	std::vector<Steps*> vNotes;
 	GetSteps(pSong, vNotes, st, Difficulty_Invalid, -1, -1, "", sCredit );
@@ -311,7 +311,7 @@ void SongUtil::AdjustDuplicateSteps( Song *pSong )
 			 * bug in an earlier version. */
 			DeleteDuplicateSteps( pSong, vSteps );
 
-			const RString &songTitle = pSong->GetDisplayFullTitle();
+			const std::string &songTitle = pSong->GetDisplayFullTitle();
 			CHECKPOINT_M(ssprintf("Duplicate steps from %s removed.", songTitle.c_str()));
 			StepsUtil::SortNotesArrayByDifficulty( vSteps );
 			CHECKPOINT_M(ssprintf("Charts from %s sorted.", songTitle.c_str()));
@@ -321,7 +321,7 @@ void SongUtil::AdjustDuplicateSteps( Song *pSong )
 				if( vSteps[k]->GetDescription() == "" )
 				{
 					/* "Hard Edit" */
-					RString EditName = Capitalize( DifficultyToString(dc) ) + " Edit";
+					std::string EditName = Capitalize( DifficultyToString(dc) ) + " Edit";
 					vSteps[k]->SetDescription( EditName );
 				}
 			}
@@ -336,7 +336,7 @@ void SongUtil::AdjustDuplicateSteps( Song *pSong )
  * @param s the string to left trim.
  * @return the trimmed string.
  */
-static RString RemoveInitialWhitespace( RString s )
+static std::string RemoveInitialWhitespace( std::string s )
 {
 	std::size_t i = s.find_first_not_of(" \t\r\n");
 	if( i != s.npos )
@@ -364,9 +364,9 @@ void SongUtil::DeleteDuplicateSteps( Song *pSong, std::vector<Steps*> &vSteps )
 			if( s1->GetMeter() != s2->GetMeter() )
 				continue;
 			/* Compare, ignoring whitespace. */
-			RString sSMNoteData1;
+			std::string sSMNoteData1;
 			s1->GetSMNoteData( sSMNoteData1 );
-			RString sSMNoteData2;
+			std::string sSMNoteData2;
 			s2->GetSMNoteData( sSMNoteData2 );
 			if( RemoveInitialWhitespace(sSMNoteData1) != RemoveInitialWhitespace(sSMNoteData2) )
 				continue;
@@ -392,7 +392,7 @@ static LocalizedString SORT_OTHER        ( "Sort", "Other" );
 
 /* Just calculating GetNumTimesPlayed within the sort is pretty slow, so let's precompute
  * it.  (This could be generalized with a template.) */
-static std::map<const Song*, RString> g_mapSongSortVal;
+static std::map<const Song*, std::string> g_mapSongSortVal;
 
 static bool CompareSongPointersBySortValueAscending( const Song *pSong1, const Song *pSong2 )
 {
@@ -405,9 +405,9 @@ static bool CompareSongPointersBySortValueDescending( const Song *pSong1, const 
 }
 
 
-RString SongUtil::MakeSortString( RString s )
+std::string SongUtil::MakeSortString( std::string s )
 {
-	s.MakeUpper();
+	StringUtil::MakeUpper(s);
 
 	// Make sure that non-alphanumeric strings are placed at the very end.
 	if( s.size() > 0 )
@@ -424,8 +424,8 @@ RString SongUtil::MakeSortString( RString s )
 static bool CompareSongPointersByTitle( const Song *pSong1, const Song *pSong2 )
 {
 	// Prefer transliterations to full titles
-	RString s1 = pSong1->GetTranslitMainTitle();
-	RString s2 = pSong2->GetTranslitMainTitle();
+	std::string s1 = pSong1->GetTranslitMainTitle();
+	std::string s2 = pSong2->GetTranslitMainTitle();
 	if( s1 == s2 )
 	{
 		s1 = pSong1->GetTranslitSubTitle();
@@ -435,13 +435,13 @@ static bool CompareSongPointersByTitle( const Song *pSong1, const Song *pSong2 )
 	s1 = SongUtil::MakeSortString(s1);
 	s2 = SongUtil::MakeSortString(s2);
 
-	int ret = strcmp( s1, s2 );
+	int ret = strcmp( s1.c_str(), s2.c_str() );
 	if(ret < 0) return true;
 	if(ret > 0) return false;
 
 	/* The titles are the same.  Ensure we get a consistent ordering
 	 * by comparing the unique SongFilePaths. */
-	return pSong1->GetSongFilePath().CompareNoCase(pSong2->GetSongFilePath()) < 0;
+	return StringUtil::CompareNoCase(pSong1->GetSongFilePath(), pSong2->GetSongFilePath()) < 0;
 }
 
 void SongUtil::SortSongPointerArrayByTitle( std::vector<Song*> &vpSongsInOut )
@@ -487,7 +487,7 @@ void SongUtil::SortSongPointerArrayByLength( std::vector<Song*> &vpSongsInOut )
 	sort( vpSongsInOut.begin(), vpSongsInOut.end(), CompareSongPointersByLength );
 }
 
-void AppendOctal( int n, int digits, RString &out )
+void AppendOctal( int n, int digits, std::string &out )
 {
 	for( int p = digits-1; p >= 0; --p )
 	{
@@ -497,11 +497,11 @@ void AppendOctal( int n, int digits, RString &out )
 	}
 }
 
-static bool CompDescending( const std::pair<Song*, RString> &a, const std::pair<Song*, RString> &b )
+static bool CompDescending( const std::pair<Song*, std::string> &a, const std::pair<Song*, std::string> &b )
 {
 	return a.second > b.second;
 }
-static bool CompAscending( const std::pair<Song*, RString> &a, const std::pair<Song*, RString> &b )
+static bool CompAscending( const std::pair<Song*, std::string> &a, const std::pair<Song*, std::string> &b )
 {
 	return a.second < b.second;
 }
@@ -510,7 +510,7 @@ void SongUtil::SortSongPointerArrayByGrades( std::vector<Song*> &vpSongsInOut, b
 {
 	/* Optimize by pre-writing a string to compare, since doing
 	 * GetNumNotesWithGrade inside the sort is too slow. */
-	typedef std::pair<Song*, RString> val;
+	typedef std::pair<Song*, std::string> val;
 	std::vector<val> vals;
 	vals.reserve( vpSongsInOut.size() );
 
@@ -523,7 +523,7 @@ void SongUtil::SortSongPointerArrayByGrades( std::vector<Song*> &vpSongsInOut, b
 		ASSERT( pProfile != nullptr );
 		pProfile->GetGrades( pSong, GAMESTATE->GetCurrentStyle(GAMESTATE->GetMasterPlayerNumber())->m_StepsType, iCounts );
 
-		RString foo;
+		std::string foo;
 		foo.reserve(256);
 		for( int g=Grade_Tier01; g<NUM_Grade; ++g )
 			AppendOctal( iCounts[g], 3, foo );
@@ -540,7 +540,7 @@ void SongUtil::SortSongPointerArrayByProfileGrades( std::vector<Song*> &vpSongsI
 {
 	/* Optimize by pre-writing a string to compare, since doing
 	 * GetNumNotesWithGrade inside the sort is too slow. */
-	typedef std::pair<Song*, RString> val;
+	typedef std::pair<Song*, std::string> val;
 	std::vector<val> vals;
 	vals.reserve( vpSongsInOut.size() );
 
@@ -553,7 +553,7 @@ void SongUtil::SortSongPointerArrayByProfileGrades( std::vector<Song*> &vpSongsI
 		ASSERT( pProfile != nullptr );
 		pProfile->GetGrades( pSong, GAMESTATE->GetCurrentStyle(pn)->m_StepsType, iCounts );
 
-		RString foo;
+		std::string foo;
 		foo.reserve(256);
 		for( int g=Grade_Tier01; g<NUM_Grade; ++g )
 			AppendOctal( iCounts[g], 3, foo );
@@ -600,8 +600,8 @@ int SongUtil::CompareSongPointersByGroup(const Song *pSong1, const Song *pSong2)
 
 static int CompareSongPointersByGroupAndTitle( const Song *pSong1, const Song *pSong2 )
 {
-	const RString &sGroup1 = pSong1->m_sGroupName;
-	const RString &sGroup2 = pSong2->m_sGroupName;
+	const std::string &sGroup1 = pSong1->m_sGroupName;
+	const std::string &sGroup2 = pSong2->m_sGroupName;
 
 	if( sGroup1 < sGroup2 )
 		return true;
@@ -634,10 +634,10 @@ void SongUtil::SortSongPointerArrayByNumPlays( std::vector<Song*> &vpSongsInOut,
 	g_mapSongSortVal.clear();
 }
 
-RString SongUtil::GetSectionNameFromSongAndSort( const Song* pSong, SortOrder so )
+std::string SongUtil::GetSectionNameFromSongAndSort( const Song* pSong, SortOrder so )
 {
 	if( pSong == nullptr )
-		return RString();
+		return std::string();
 
 	switch( so )
 	{
@@ -649,7 +649,7 @@ RString SongUtil::GetSectionNameFromSongAndSort( const Song* pSong, SortOrder so
 	case SORT_TITLE:
 	case SORT_ARTIST:
 		{
-			RString s;
+			std::string s;
 			switch( so )
 			{
 			case SORT_TITLE:	s = pSong->GetTranslitMainTitle();	break;
@@ -660,13 +660,13 @@ RString SongUtil::GetSectionNameFromSongAndSort( const Song* pSong, SortOrder so
 			s = MakeSortString(s);	// resulting string will be uppercase
 
 			if( s.empty() )
-				return RString();
+				return std::string();
 			else if( s[0] >= '0' && s[0] <= '9' )
 				return "0-9";
 			else if( s[0] < 'A' || s[0] > 'Z')
 				return SORT_OTHER.GetValue();
 			else
-				return s.Left(1);
+				return s.substr(0, 1);
 		}
 	case SORT_GENRE:
 		if( !pSong->m_sGenre.empty() )
@@ -684,7 +684,7 @@ RString SongUtil::GetSectionNameFromSongAndSort( const Song* pSong, SortOrder so
 				return ssprintf("%03d-%03d",iMaxBPM-(iBPMGroupSize-1), iMaxBPM);
 			}
 			else
-				return RString();
+				return std::string();
 		}
 	case SORT_LENGTH:
 		{
@@ -697,11 +697,11 @@ RString SongUtil::GetSectionNameFromSongAndSort( const Song* pSong, SortOrder so
 				return ssprintf( "%s-%s", SecondsToMMSS(iMinLength).c_str(), SecondsToMMSS(iMaxLength).c_str() );
 			}
 			else
-				return RString();
+				return std::string();
 		}
 	case SORT_POPULARITY:
 	case SORT_RECENT:
-		return RString();
+		return std::string();
 	case SORT_TOP_GRADES_P1:
 			{
 			int iCounts[NUM_Grade];
@@ -761,9 +761,9 @@ RString SongUtil::GetSectionNameFromSongAndSort( const Song* pSong, SortOrder so
 			return SORT_NOT_AVAILABLE.GetValue();
 		}
 	case SORT_METER:
-		return RString();
+		return std::string();
 	case SORT_MODE_MENU:
-		return RString();
+		return std::string();
 	case SORT_ALL_COURSES:
 	case SORT_NONSTOP_COURSES:
 	case SORT_ONI_COURSES:
@@ -775,10 +775,10 @@ RString SongUtil::GetSectionNameFromSongAndSort( const Song* pSong, SortOrder so
 
 void SongUtil::SortSongPointerArrayBySectionName( std::vector<Song*> &vpSongsInOut, SortOrder so )
 {
-	RString sOther = SORT_OTHER.GetValue();
+	std::string sOther = SORT_OTHER.GetValue();
 	for(unsigned i = 0; i < vpSongsInOut.size(); ++i)
 	{
-		RString val = GetSectionNameFromSongAndSort( vpSongsInOut[i], so );
+		std::string val = GetSectionNameFromSongAndSort( vpSongsInOut[i], so );
 
 		// Make sure 0-9 comes first and OTHER comes last.
 		if( val == "0-9" )			val = "0";
@@ -799,7 +799,7 @@ void SongUtil::SortSongPointerArrayByStepsTypeAndMeter( std::vector<Song*> &vpSo
 	{
 		// Ignore locked steps.
 		const Steps* pSteps = GetClosestNotes( vpSongsInOut[i], st, dc, true );
-		RString &s = g_mapSongSortVal[vpSongsInOut[i]];
+		std::string &s = g_mapSongSortVal[vpSongsInOut[i]];
 		s = ssprintf("%03d", pSteps ? pSteps->GetMeter() : 0);
 
 		/* pSteps may not be exactly the difficulty we want; for example, we
@@ -824,7 +824,7 @@ void SongUtil::SortByMostRecentlyPlayedForMachine( std::vector<Song*> &vpSongsIn
 	for (Song const *s : vpSongsInOut)
 	{
 		int iNumTimesPlayed = pProfile->GetSongNumTimesPlayed( s );
-		RString val = iNumTimesPlayed ? pProfile->GetSongLastPlayedDateTime(s).GetString() : RString("0");
+		std::string val = iNumTimesPlayed ? pProfile->GetSongLastPlayedDateTime(s).GetString() : std::string("0");
 		g_mapSongSortVal[s] = val;
 	}
 
@@ -832,7 +832,7 @@ void SongUtil::SortByMostRecentlyPlayedForMachine( std::vector<Song*> &vpSongsIn
 	g_mapSongSortVal.clear();
 }
 
-bool SongUtil::IsEditDescriptionUnique( const Song* pSong, StepsType st, const RString &sPreferredDescription, const Steps *pExclude )
+bool SongUtil::IsEditDescriptionUnique( const Song* pSong, StepsType st, const std::string &sPreferredDescription, const Steps *pExclude )
 {
 	for (Steps const *pSteps : pSong->GetAllSteps())
 	{
@@ -848,7 +848,7 @@ bool SongUtil::IsEditDescriptionUnique( const Song* pSong, StepsType st, const R
 	return true;
 }
 
-bool SongUtil::IsChartNameUnique( const Song* pSong, StepsType st, const RString &name, const Steps *pExclude )
+bool SongUtil::IsChartNameUnique( const Song* pSong, StepsType st, const std::string &name, const Steps *pExclude )
 {
 	for (Steps const *pSteps : pSong->GetAllSteps())
 	{
@@ -862,18 +862,18 @@ bool SongUtil::IsChartNameUnique( const Song* pSong, StepsType st, const RString
 	return true;
 }
 
-RString SongUtil::MakeUniqueEditDescription( const Song *pSong, StepsType st, const RString &sPreferredDescription )
+std::string SongUtil::MakeUniqueEditDescription( const Song *pSong, StepsType st, const std::string &sPreferredDescription )
 {
 	if( IsEditDescriptionUnique( pSong, st, sPreferredDescription, nullptr ) )
 		return sPreferredDescription;
 
-	RString sTemp;
+	std::string sTemp;
 
 	for( int i=0; i<1000; i++ )
 	{
 		// make name "My Edit" -> "My Edit2"
-		RString sNum = ssprintf("%d", i+1);
-		sTemp = sPreferredDescription.Left( MAX_STEPS_DESCRIPTION_LENGTH - sNum.size() ) + sNum;
+		std::string sNum = ssprintf("%d", i+1);
+		sTemp = sPreferredDescription.substr(0, MAX_STEPS_DESCRIPTION_LENGTH - sNum.size()) + sNum;
 
 		if( IsEditDescriptionUnique(pSong, st, sTemp, nullptr) )
 			return sTemp;
@@ -889,7 +889,7 @@ static LocalizedString EDIT_NAME_CONFLICTS	( "SongUtil", "The name you chose con
 static LocalizedString CHART_NAME_CANNOT_CONTAIN ("SongUtil", "The chart name cannot contain any of the following characters: %s" );
 static LocalizedString EDIT_NAME_CANNOT_CONTAIN	( "SongUtil", "The edit name cannot contain any of the following characters: %s" );
 
-bool SongUtil::ValidateCurrentEditStepsDescription( const RString &sAnswer, RString &sErrorOut )
+bool SongUtil::ValidateCurrentEditStepsDescription( const std::string &sAnswer, std::string &sErrorOut )
 {
 	Steps *pSteps = GAMESTATE->m_pCurSteps[PLAYER_1];
 	Song *pSong = pSteps->m_pSong;
@@ -902,10 +902,10 @@ bool SongUtil::ValidateCurrentEditStepsDescription( const RString &sAnswer, RStr
 		return false;
 	}
 
-	static const RString sInvalidChars = "\\/:*?\"<>|";
-	if( strpbrk(sAnswer, sInvalidChars) != nullptr )
+	static const std::string sInvalidChars = "\\/:*?\"<>|";
+	if( strpbrk(sAnswer.c_str(), sInvalidChars.c_str()) != nullptr )
 	{
-		sErrorOut = ssprintf( EDIT_NAME_CANNOT_CONTAIN.GetValue(), sInvalidChars.c_str() );
+		sErrorOut = ssprintf( EDIT_NAME_CANNOT_CONTAIN.GetValue().c_str(), sInvalidChars.c_str() );
 		return false;
 	}
 
@@ -927,7 +927,7 @@ bool SongUtil::ValidateCurrentEditStepsDescription( const RString &sAnswer, RStr
 	return true;
 }
 
-bool SongUtil::ValidateCurrentStepsDescription( const RString &sAnswer, RString &sErrorOut )
+bool SongUtil::ValidateCurrentStepsDescription( const std::string &sAnswer, std::string &sErrorOut )
 {
 	if( sAnswer.empty() )
 		return true;
@@ -948,14 +948,14 @@ bool SongUtil::ValidateCurrentStepsDescription( const RString &sAnswer, RString 
 	return true;
 }
 
-bool SongUtil::ValidateCurrentStepsChartName(const RString &answer, RString &error)
+bool SongUtil::ValidateCurrentStepsChartName(const std::string &answer, std::string &error)
 {
 	if (answer.empty()) return true;
 
-	static const RString sInvalidChars = "\\/:*?\"<>|";
-	if( strpbrk(answer, sInvalidChars) != nullptr )
+	static const std::string sInvalidChars = "\\/:*?\"<>|";
+	if( strpbrk(answer.c_str(), sInvalidChars.c_str()) != nullptr )
 	{
-		error = ssprintf( CHART_NAME_CANNOT_CONTAIN.GetValue(), sInvalidChars.c_str() );
+		error = ssprintf( CHART_NAME_CANNOT_CONTAIN.GetValue().c_str(), sInvalidChars.c_str() );
 		return false;
 	}
 
@@ -975,7 +975,7 @@ bool SongUtil::ValidateCurrentStepsChartName(const RString &answer, RString &err
 
 static LocalizedString AUTHOR_NAME_CANNOT_CONTAIN( "SongUtil", "The step author's name cannot contain any of the following characters: %s" );
 
-bool SongUtil::ValidateCurrentStepsCredit( const RString &sAnswer, RString &sErrorOut )
+bool SongUtil::ValidateCurrentStepsCredit( const std::string &sAnswer, std::string &sErrorOut )
 {
 	if( sAnswer.empty() )
 		return true;
@@ -986,10 +986,10 @@ bool SongUtil::ValidateCurrentStepsCredit( const RString &sAnswer, RString &sErr
 		return true;
 
 	// Borrow from EditDescription testing. Perhaps this should be abstracted? -Wolfman2000
-	static const RString sInvalidChars = "\\/:*?\"<>|";
-	if( strpbrk(sAnswer, sInvalidChars) != nullptr )
+	static const std::string sInvalidChars = "\\/:*?\"<>|";
+	if( strpbrk(sAnswer.c_str(), sInvalidChars.c_str()) != nullptr )
 	{
-		sErrorOut = ssprintf( AUTHOR_NAME_CANNOT_CONTAIN.GetValue(), sInvalidChars.c_str() );
+		sErrorOut = ssprintf( AUTHOR_NAME_CANNOT_CONTAIN.GetValue().c_str(), sInvalidChars.c_str() );
 		return false;
 	}
 
@@ -997,50 +997,50 @@ bool SongUtil::ValidateCurrentStepsCredit( const RString &sAnswer, RString &sErr
 }
 
 static LocalizedString PREVIEW_DOES_NOT_EXIST("SongUtil", "The preview file '%s' does not exist.");
-bool SongUtil::ValidateCurrentSongPreview(const RString& answer, RString& error)
+bool SongUtil::ValidateCurrentSongPreview(const std::string& answer, std::string& error)
 {
 	if(answer.empty())
 	{ return true; }
 	Song* song= GAMESTATE->m_pCurSong;
-	RString real_file= song->m_PreviewFile;
+	std::string real_file= song->m_PreviewFile;
 	song->m_PreviewFile= answer;
-	RString path= song->GetPreviewMusicPath();
+	std::string path= song->GetPreviewMusicPath();
 	bool valid= DoesFileExist(path);
 	song->m_PreviewFile= real_file;
 	if(!valid)
 	{
-		error= ssprintf(PREVIEW_DOES_NOT_EXIST.GetValue(), answer.c_str());
+		error= ssprintf(PREVIEW_DOES_NOT_EXIST.GetValue().c_str(), answer.c_str());
 	}
 	return valid;
 }
 
 static LocalizedString MUSIC_DOES_NOT_EXIST("SongUtil", "The music file '%s' does not exist.");
-bool SongUtil::ValidateCurrentStepsMusic(const RString &answer, RString &error)
+bool SongUtil::ValidateCurrentStepsMusic(const std::string &answer, std::string &error)
 {
 	if(answer.empty())
 		return true;
 	Steps *pSteps = GAMESTATE->m_pCurSteps[PLAYER_1];
-	RString real_file= pSteps->GetMusicFile();
+	std::string real_file= pSteps->GetMusicFile();
 	pSteps->SetMusicFile(answer);
-	RString path= pSteps->GetMusicPath();
+	std::string path= pSteps->GetMusicPath();
 	bool valid= DoesFileExist(path);
 	pSteps->SetMusicFile(real_file);
 	if(!valid)
 	{
-		error= ssprintf(MUSIC_DOES_NOT_EXIST.GetValue(), answer.c_str());
+		error= ssprintf(MUSIC_DOES_NOT_EXIST.GetValue().c_str(), answer.c_str());
 	}
 	return valid;
 }
 
-void SongUtil::GetAllSongGenres( std::vector<RString> &vsOut )
+void SongUtil::GetAllSongGenres( std::vector<std::string> &vsOut )
 {
-	std::set<RString> genres;
+	std::set<std::string> genres;
 	for (Song const *song : SONGMAN->GetAllSongs())
 	{
 		if( !song->m_sGenre.empty() )
 			genres.insert( song->m_sGenre );
 	}
-	for (RString const &genre : genres)
+	for (std::string const &genre : genres)
 	{
 		vsOut.push_back( genre );
 	}
@@ -1187,7 +1187,7 @@ bool SongUtil::GetStepsTypeAndDifficultyFromSortOrder( SortOrder so, StepsType &
 			if( i->m_StyleType == StyleType_OnePlayerTwoSides )
 			{
 				// Ugly hack to ignore pump's half-double.
-				bool bContainsHalf = ((RString)i->m_szName).find("half") != RString::npos;
+				bool bContainsHalf = ((std::string)i->m_szName).find("half") != std::string::npos;
 				if( bContainsHalf )
 					continue;
 				stOut = i->m_StepsType;
@@ -1212,7 +1212,7 @@ void SongID::FromSong( const Song *p )
 
 	// HACK for backwards compatibility:
 	// Strip off leading "/".  2005/05/21 file layer changes added a leading slash.
-	if( sDir.Left(1) == "/" )
+	if( StringUtil::StartsWith(sDir, "/" ))
 		sDir.erase( sDir.begin() );
 }
 
@@ -1223,8 +1223,8 @@ Song *SongID::ToSong() const
 	{
 		// HACK for backwards compatibility: Re-add the leading "/".
 		// 2005/05/21 file layer changes added a leading slash.
-		RString sDir2 = sDir;
-		if(sDir2.Left(1) != "/")
+		std::string sDir2 = sDir;
+		if(!StringUtil::StartsWith(sDir2, "/"))
 		{
 			sDir2 = "/" + sDir2;
 		}
@@ -1246,11 +1246,11 @@ void SongID::LoadFromNode( const XNode* pNode )
 	pNode->GetAttrValue("Dir", sDir);
 
 	// HACK for backwards compatibility: /AdditionalSongs has been merged into /Songs
-	if (sDir.Left(16) == "AdditionalSongs/")
+	if (StringUtil::StartsWith(sDir, "AdditionalSongs/"))
 		sDir.replace(0, 16, "Songs/");
 }
 
-RString SongID::ToString() const
+std::string SongID::ToString() const
 {
 	return sDir;
 }

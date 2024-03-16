@@ -15,11 +15,11 @@ namespace
 			return;
 
 		/* Register base classes first. */
-		std::map<RString, LuaBinding*> mapToRegister;
+		std::map<std::string, LuaBinding*> mapToRegister;
 		for (LuaBinding *binding : *m_Subscribers.m_pSubscribers)
 			mapToRegister[binding->GetClassName()] = binding;
 
-		std::set<RString> setRegisteredAlready;
+		std::set<std::string> setRegisteredAlready;
 
 		while( !mapToRegister.empty() )
 		{
@@ -32,8 +32,8 @@ namespace
 				{
 					break;
 				}
-				RString sBase = pBinding->GetBaseClassName();
-				std::map<RString, LuaBinding*>::const_iterator it = mapToRegister.find(sBase);
+				std::string sBase = pBinding->GetBaseClassName();
+				std::map<std::string, LuaBinding*>::const_iterator it = mapToRegister.find(sBase);
 				if( it != mapToRegister.end() )
 				{
 					pBinding = it->second;
@@ -47,7 +47,7 @@ namespace
 
 				FAIL_M( ssprintf("Base class of \"%s\" not registered: \"%s\"",
 					pBinding->GetClassName().c_str(),
-					sBase.c_str()) );
+					sBase.c_str()).c_str() );
 			}
 
 			pBinding->Register( L );
@@ -75,7 +75,7 @@ void LuaBinding::Register( lua_State *L )
 	int methods = lua_gettop( L );
 
 	/* Create a metatable for the userdata objects. */
-	luaL_newmetatable( L, GetClassName() );
+	luaL_newmetatable( L, GetClassName().c_str() );
 	int metatable = lua_gettop( L );
 
 	// We use the metatable to determine the type of the table, so don't
@@ -101,17 +101,17 @@ void LuaBinding::Register( lua_State *L )
 	// to the base class.
 	if( IsDerivedClass() )
 	{
-		lua_getfield( L, LUA_GLOBALSINDEX, GetBaseClassName() );
+		lua_getfield( L, LUA_GLOBALSINDEX, GetBaseClassName().c_str() );
 		lua_setfield( L, methods_metatable, "__index" );
 
-		lua_pushstring( L, GetBaseClassName() );
+		lua_pushstring( L, GetBaseClassName().c_str() );
 		lua_setfield( L, metatable, "base" );
 	}
 
-	lua_pushstring( L, GetClassName() );
+	lua_pushstring( L, GetClassName().c_str() );
 	lua_setfield( L, methods_metatable, "class" );
 
-	lua_pushstring( L, GetClassName() );
+	lua_pushstring( L, GetClassName().c_str() );
 	LuaHelpers::PushValueFunc( L, 1 );
 	lua_setfield( L, metatable, "__type" ); // for luaL_pushtype
 
@@ -119,16 +119,16 @@ void LuaBinding::Register( lua_State *L )
 		lua_newtable( L );
 		int iHeirarchyTable = lua_gettop( L );
 
-		RString sClass = GetClassName();
+		std::string sClass = GetClassName();
 		int iIndex = 0;
 		while( !sClass.empty() )
 		{
-			lua_pushstring( L, sClass );
+			lua_pushstring( L, sClass.c_str() );
 			lua_pushinteger( L, iIndex );
 			lua_rawset( L, iHeirarchyTable );
 			++iIndex;
 
-			luaL_getmetatable( L, sClass );
+			luaL_getmetatable( L, sClass.c_str() );
 			ASSERT( !lua_isnil(L, -1) );
 			lua_getfield( L, -1, "base" );
 
@@ -155,11 +155,11 @@ void LuaBinding::Register( lua_State *L )
 // types (eg. "Actor.x(GAMESTATE, 10)"), which will crash or cause corruption.
 // #define FAST_LUA
 
-void LuaBinding::CreateMethodsTable( lua_State *L, const RString &sName )
+void LuaBinding::CreateMethodsTable( lua_State *L, const std::string &sName )
 {
 	lua_newtable( L );
 	lua_pushvalue( L, -1 );
-	lua_setfield( L, LUA_GLOBALSINDEX, sName );
+	lua_setfield( L, LUA_GLOBALSINDEX, sName.c_str() );
 }
 
 int LuaBinding::PushEqual( lua_State *L )
@@ -255,13 +255,13 @@ static void GetGlobalTable( Lua *L )
 /* The object is on the stack.  It's either a table or a userdata.
  * If needed, associate the metatable; if a table, also add it to
  * the userdata table. */
-void LuaBinding::ApplyDerivedType( Lua *L, const RString &sClassName, void *pSelf )
+void LuaBinding::ApplyDerivedType( Lua *L, const std::string &sClassName, void *pSelf )
 {
 	int iTable = lua_gettop( L );
 
 	int iType = lua_type( L, iTable );
 	ASSERT_M( iType == LUA_TTABLE || iType == LUA_TUSERDATA,
-		ssprintf("Object on lua stack that derived type is being applied to is %i instead of %i or %i", iType, LUA_TTABLE, LUA_TUSERDATA) );
+		ssprintf("Object on lua stack that derived type is being applied to is %i instead of %i or %i", iType, LUA_TTABLE, LUA_TUSERDATA).c_str() );
 
 	if( iType == LUA_TTABLE )
 	{
@@ -290,14 +290,14 @@ void LuaBinding::ApplyDerivedType( Lua *L, const RString &sClassName, void *pSel
 		lua_settop( L, iTable );
 	}
 
-	luaL_getmetatable( L, sClassName );
+	luaL_getmetatable( L, sClassName.c_str() );
 	lua_setmetatable( L, iTable );
 }
 
 #include "RageUtil_AutoPtr.h"
 REGISTER_CLASS_TRAITS( LuaClass, new LuaClass(*pCopy) )
 
-void *LuaBinding::GetPointerFromStack( Lua *L, const RString &sType, int iArg )
+void *LuaBinding::GetPointerFromStack( Lua *L, const std::string &sType, int iArg )
 {
 	iArg = LuaHelpers::AbsIndex( L, iArg );
 

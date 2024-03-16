@@ -23,6 +23,7 @@
 #include "RageSurface.h"
 #include "arch/Dialog/Dialog.h"
 #include "archutils/Win32/DirectXHelpers.h"
+#include "StringUtil.h"
 
 #include <cstdint>
 
@@ -31,7 +32,7 @@
 #pragma comment(lib, "vfw32.lib")
 #endif
 
-RageMovieTexture *RageMovieTextureDriver_DShow::Create( RageTextureID ID, RString &sError )
+RageMovieTexture *RageMovieTextureDriver_DShow::Create( RageTextureID ID, std::string &sError )
 {
 	MovieTexture_DShow *pRet = new MovieTexture_DShow( ID );
 	sError = pRet->Init();
@@ -42,7 +43,7 @@ RageMovieTexture *RageMovieTextureDriver_DShow::Create( RageTextureID ID, RStrin
 
 REGISTER_MOVIE_TEXTURE_CLASS( DShow );
 
-static RString FourCCToString( int fcc )
+static std::string FourCCToString( int fcc )
 {
 	char c[4];
 	c[0] = char((fcc >> 0) & 0xFF);
@@ -50,23 +51,23 @@ static RString FourCCToString( int fcc )
 	c[2] = char((fcc >> 16) & 0xFF);
 	c[3] = char((fcc >> 24) & 0xFF);
 
-	RString s;
+	std::string s;
 	for( int i = 0; i < 4; ++i )
 		s += clamp( c[i], '\x20', '\x7e' );
 
 	return s;
 }
 
-static void CheckCodecVersion( RString codec, RString desc )
+static void CheckCodecVersion( std::string codec, std::string desc )
 {
-	if( !codec.CompareNoCase("DIVX") )
+	if( !StringUtil::CompareNoCase(codec, "DIVX") )
 	{
 		/* "DivX 5.0.5 Codec" */
 		Regex GetDivXVersion;
 
 		int major, minor, rev;
-		if( sscanf( desc, "DivX %i.%i.%i", &major, &minor, &rev ) != 3 &&
-			sscanf( desc, "DivX Pro %i.%i.%i", &major, &minor, &rev ) != 3 )
+		if( sscanf( desc.c_str(), "DivX %i.%i.%i", &major, &minor, &rev ) != 3 &&
+			sscanf( desc.c_str(), "DivX Pro %i.%i.%i", &major, &minor, &rev ) != 3 )
 		{
 			LOG->Warn( "Couldn't parse DivX version \"%s\"", desc.c_str() );
 			return;
@@ -155,9 +156,9 @@ MovieTexture_DShow::MovieTexture_DShow( RageTextureID ID ) :
 	buffer = nullptr;
 }
 
-RString MovieTexture_DShow::Init()
+std::string MovieTexture_DShow::Init()
 {
-	RString sError = Create();
+	std::string sError = Create();
 	if( sError != "" )
 		return sError;
 
@@ -166,7 +167,7 @@ RString MovieTexture_DShow::Init()
 	// flip all frame rects because movies are upside down
 	for( unsigned i=0; i<m_TextureCoordRects.size(); i++ )
 		swap(m_TextureCoordRects[i].top, m_TextureCoordRects[i].bottom);
-	return RString();
+	return std::string();
 }
 
 /* Hold buffer_lock.  If it's held, then the decoding thread is waiting
@@ -292,12 +293,12 @@ void MovieTexture_DShow::Update(float fDeltaTime)
 	CheckFrame();
 }
 
-RString PrintCodecError( HRESULT hr, RString s )
+std::string PrintCodecError( HRESULT hr, std::string s )
 {
 	/* Actually, we might need XviD; we might want to look
 	 * at the file and try to figure out if it's something
 	 * common: DIV3, DIV4, DIV5, XVID, or maybe even MPEG2. */
-	RString err = hr_ssprintf(hr, "%s", s.c_str());
+	std::string err = hr_ssprintf(hr, "%s", s.c_str());
 	return
 		ssprintf(
 		"There was an error initializing a movie: %s.\n"
@@ -308,9 +309,9 @@ RString PrintCodecError( HRESULT hr, RString s )
 		err.c_str() );
 }
 
-RString MovieTexture_DShow::GetActiveFilterList()
+std::string MovieTexture_DShow::GetActiveFilterList()
 {
-	RString ret;
+	std::string ret;
 
 	IEnumFilters *pEnum = nullptr;
 	HRESULT hr = m_pGB->EnumFilters(&pEnum);
@@ -335,7 +336,7 @@ RString MovieTexture_DShow::GetActiveFilterList()
 	return ret;
 }
 
-RString MovieTexture_DShow::Create()
+std::string MovieTexture_DShow::Create()
 {
 	RageTextureID actualID = GetID();
 
@@ -422,7 +423,7 @@ RString MovieTexture_DShow::Create()
 	// Start the graph running
 	Play();
 
-	return RString();
+	return std::string();
 }
 
 

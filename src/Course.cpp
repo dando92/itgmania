@@ -38,7 +38,7 @@ StringToX( SongSort );
 
 struct OldStyleStringToSongSortMapHolder
 {
-	std::map<RString, SongSort> conversion_map;
+	std::map<std::string, SongSort> conversion_map;
 	
 	OldStyleStringToSongSortMapHolder()
 	{
@@ -51,11 +51,11 @@ struct OldStyleStringToSongSortMapHolder
 
 OldStyleStringToSongSortMapHolder OldStyleStringToSongSortMapHolder_converter;
 
-SongSort OldStyleStringToSongSort(const RString &ss)
+SongSort OldStyleStringToSongSort(const std::string &ss)
 {
-	RString s2 = ss;
-	s2.MakeLower();
-	std::map<RString, SongSort>::iterator diff=
+	std::string s2 = ss;
+	StringUtil::MakeLower(s2);
+	std::map<std::string, SongSort>::iterator diff=
 		OldStyleStringToSongSortMapHolder_converter.conversion_map.find(s2);
 	if(diff != OldStyleStringToSongSortMapHolder_converter.conversion_map.end())
 	{
@@ -76,9 +76,9 @@ const int MAX_BOTTOM_RANGE = 10;
 
 //#define INCLUDE_BEGINNER_STEPS	THEME->GetMetricB( "Course","IncludeBeginnerSteps" );
 
-RString CourseEntry::GetTextDescription() const
+std::string CourseEntry::GetTextDescription() const
 {
-	std::vector<RString> vsEntryDescription;
+	std::vector<std::string> vsEntryDescription;
 	Song *pSong = songID.ToSong();
 	if( pSong )
 		vsEntryDescription.push_back( pSong->GetTranslitFullTitle() );
@@ -115,7 +115,7 @@ RString CourseEntry::GetTextDescription() const
 	if( fGainSeconds != 0 )
 		vsEntryDescription.push_back( ssprintf("Low meter: %.0f", fGainSeconds) );
 
-	RString s = join( ",", vsEntryDescription );
+	std::string s = join( ",", vsEntryDescription );
 	return s;
 }
 
@@ -205,7 +205,7 @@ void Course::RevertFromDisk()
 	CourseLoaderCRS::LoadFromCRSFile( m_sPath, *this );
 }
 
-RString Course::GetCacheFilePath() const
+std::string Course::GetCacheFilePath() const
 {
 	return SongCacheIndex::GetCacheFilePath( "Courses", m_sPath );
 }
@@ -272,34 +272,34 @@ struct SortTrailEntry
 	bool operator< ( const SortTrailEntry &rhs ) const { return SortMeter < rhs.SortMeter; }
 };
 
-RString Course::GetDisplayMainTitle() const
+std::string Course::GetDisplayMainTitle() const
 {
 	if( !PREFSMAN->m_bShowNativeLanguage )
 		return GetTranslitMainTitle();
 	return m_sMainTitle;
 }
 
-RString Course::GetDisplaySubTitle() const
+std::string Course::GetDisplaySubTitle() const
 {
 	if( !PREFSMAN->m_bShowNativeLanguage )
 		return GetTranslitSubTitle();
 	return m_sSubTitle;
 }
 
-RString Course::GetDisplayFullTitle() const
+std::string Course::GetDisplayFullTitle() const
 {
-	RString sTitle = GetDisplayMainTitle();
-	RString sSubTitle = GetDisplaySubTitle();
+	std::string sTitle = GetDisplayMainTitle();
+	std::string sSubTitle = GetDisplaySubTitle();
 
 	if( !sSubTitle.empty() )
 		sTitle += " " + sSubTitle;
 	return sTitle;
 }
 
-RString Course::GetTranslitFullTitle() const
+std::string Course::GetTranslitFullTitle() const
 {
-	RString sTitle = GetTranslitMainTitle();
-	RString sSubTitle = GetTranslitSubTitle();
+	std::string sTitle = GetTranslitMainTitle();
+	std::string sSubTitle = GetTranslitSubTitle();
 
 	if( !sSubTitle.empty() )
 		sTitle += " " + sSubTitle;
@@ -383,7 +383,7 @@ bool Course::GetTrailSorted( StepsType st, CourseDifficulty cd, Trail &trail ) c
 			ASSERT( bOK );
 		}
 		ASSERT_M( trail.m_vEntries.size() == SortTrail.m_vEntries.size(),
-			ssprintf("%i %i", int(trail.m_vEntries.size()), int(SortTrail.m_vEntries.size())) );
+			ssprintf("%i %i", int(trail.m_vEntries.size()), int(SortTrail.m_vEntries.size())).c_str() );
 
 		std::vector<SortTrailEntry> entries;
 		for( unsigned i = 0; i < trail.m_vEntries.size(); ++i )
@@ -978,9 +978,9 @@ const Style *Course::GetCourseStyle( const Game *pGame, int iNumPlayers ) const
 
 	for (Style const *pStyle : vpStyles)
 	{
-		for (RString const &style : m_setStyles)
+		for (std::string const &style : m_setStyles)
 		{
-			if( !style.CompareNoCase(pStyle->m_szName) )
+			if( StringUtil::EqualsNoCase(style, pStyle->m_szName) )
 				return pStyle;
 		}
 	}
@@ -1117,19 +1117,19 @@ bool Course::CourseHasBestOrWorst() const
 	return false;
 }
 
-RString Course::GetBannerPath() const
+std::string Course::GetBannerPath() const
 {
 	if( m_sBannerPath.empty() )
-		return RString();
+		return std::string();
 	if( m_sBannerPath[0] == '/' )
 		return m_sBannerPath;
 	return Dirname(m_sPath) + m_sBannerPath;
 }
 
-RString Course::GetBackgroundPath() const
+std::string Course::GetBackgroundPath() const
 {
 	if( m_sBackgroundPath.empty() )
-		return RString();
+		return std::string();
 	if( m_sBackgroundPath[0] == '/' )
 		return m_sBackgroundPath;
 	return Dirname(m_sPath) + m_sBackgroundPath;
@@ -1176,12 +1176,12 @@ void Course::UpdateCourseStats( StepsType st )
 
 bool Course::IsRanking() const
 {
-	std::vector<RString> rankingsongs;
+	std::vector<std::string> rankingsongs;
 
 	split(THEME->GetMetric("ScreenRanking", "CoursesToShow"), ",", rankingsongs);
 
 	for(unsigned i=0; i < rankingsongs.size(); i++)
-		if (rankingsongs[i].EqualsNoCase(m_sPath))
+		if (StringUtil::EqualsNoCase(rankingsongs[i], m_sPath))
 			return true;
 
 	return false;
@@ -1241,23 +1241,23 @@ void Course::CalculateRadarValues()
 	}
 }
 
-bool Course::Matches( RString sGroup, RString sCourse ) const
+bool Course::Matches(const std::string &sGroup, const std::string &sCourse ) const
 {
-	if( sGroup.size() && sGroup.CompareNoCase(this->m_sGroupName) != 0)
+	if( !sGroup.empty() && !StringUtil::EqualsNoCase(sGroup, this->m_sGroupName) )
 		return false;
 
-	RString sFile = m_sPath;
+	std::string sFile = m_sPath;
 	if( !sFile.empty() )
 	{
-		sFile.Replace("\\","/");
-		std::vector<RString> bits;
+		StringUtil::Replace(sFile, '\\', '/');
+		std::vector<std::string> bits;
 		split( sFile, "/", bits );
-		const RString &sLastBit = bits[bits.size()-1];
-		if( sCourse.EqualsNoCase(sLastBit) )
+		const std::string &sLastBit = bits[bits.size()-1];
+		if( StringUtil::EqualsNoCase(sCourse, sLastBit) )
 			return true;
 	}
 
-	if( sCourse.EqualsNoCase(this->GetTranslitFullTitle()) )
+	if( StringUtil::EqualsNoCase(sCourse, this->GetTranslitFullTitle()) )
 		return true;
 
 	return false;
@@ -1310,8 +1310,8 @@ class LunaCourse: public Luna<Course>
 {
 public:
 	DEFINE_METHOD( GetPlayMode, GetPlayMode() )
-	static int GetDisplayFullTitle( T* p, lua_State *L )	{ lua_pushstring(L, p->GetDisplayFullTitle() ); return 1; }
-	static int GetTranslitFullTitle( T* p, lua_State *L )	{ lua_pushstring(L, p->GetTranslitFullTitle() ); return 1; }
+	static int GetDisplayFullTitle( T* p, lua_State *L )	{ lua_pushstring(L, p->GetDisplayFullTitle().c_str() ); return 1; }
+	static int GetTranslitFullTitle( T* p, lua_State *L )	{ lua_pushstring(L, p->GetTranslitFullTitle().c_str() ); return 1; }
 	static int HasMods( T* p, lua_State *L )		{ lua_pushboolean(L, p->HasMods() ); return 1; }
 	static int HasTimedMods( T* p, lua_State *L )		{ lua_pushboolean( L, p->HasTimedMods() ); return 1; }
 	DEFINE_METHOD( GetCourseType, GetCourseType() )
@@ -1350,14 +1350,14 @@ public:
 		LuaHelpers::CreateTableFromArray<Trail*>( v, L );
 		return 1;
 	}
-	static int GetBannerPath( T* p, lua_State *L )		{ RString s = p->GetBannerPath(); if( s.empty() ) return 0; LuaHelpers::Push(L, s); return 1; }
-	static int GetBackgroundPath( T* p, lua_State *L )		{ RString s = p->GetBackgroundPath(); if( s.empty() ) return 0; LuaHelpers::Push(L, s); return 1; }
-	static int GetCourseDir( T* p, lua_State *L )			{ lua_pushstring(L, p->m_sPath ); return 1; }
-	static int GetGroupName( T* p, lua_State *L )		{ lua_pushstring(L, p->m_sGroupName ); return 1; }
+	static int GetBannerPath( T* p, lua_State *L )		{ std::string s = p->GetBannerPath(); if( s.empty() ) return 0; LuaHelpers::Push(L, s); return 1; }
+	static int GetBackgroundPath( T* p, lua_State *L )		{ std::string s = p->GetBackgroundPath(); if( s.empty() ) return 0; LuaHelpers::Push(L, s); return 1; }
+	static int GetCourseDir( T* p, lua_State *L )			{ lua_pushstring(L, p->m_sPath.c_str() ); return 1; }
+	static int GetGroupName( T* p, lua_State *L )		{ lua_pushstring(L, p->m_sGroupName.c_str() ); return 1; }
 	static int IsAutogen( T* p, lua_State *L )		{ lua_pushboolean(L, p->m_bIsAutogen ); return 1; }
 	static int GetEstimatedNumStages( T* p, lua_State *L )	{ lua_pushnumber(L, p->GetEstimatedNumStages() ); return 1; }
-	static int GetScripter( T* p, lua_State *L )		{ lua_pushstring(L, p->m_sScripter ); return 1; }
-	static int GetDescription( T* p, lua_State *L )		{ lua_pushstring(L, p->m_sDescription ); return 1; }
+	static int GetScripter( T* p, lua_State *L )		{ lua_pushstring(L, p->m_sScripter.c_str() ); return 1; }
+	static int GetDescription( T* p, lua_State *L )		{ lua_pushstring(L, p->m_sDescription.c_str() ); return 1; }
 	static int GetTotalSeconds( T* p, lua_State *L )
 	{
 		StepsType st = Enum::Check<StepsType>(L, 1);

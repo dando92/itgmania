@@ -8,28 +8,28 @@
 #include <vector>
 
 
-RString GetRandomFileInDir( RString sDir );
+std::string GetRandomFileInDir( std::string sDir );
 
 Character::Character(): m_sCharDir(""), m_sCharacterID(""),
 	m_sDisplayName(""), m_sCardPath(""), m_sIconPath(""),
 	m_bUsableInRave(false), m_iPreloadRefcount(0) {}
 
-bool Character::Load( RString sCharDir )
+bool Character::Load( std::string sCharDir )
 {
 	// Save character directory
-	if( sCharDir.Right(1) != "/" )
+	if( !StringUtil::EndsWith(sCharDir, "/") )
 		sCharDir += "/";
 	m_sCharDir = sCharDir;
 
 	// save ID
 	{
-		std::vector<RString> as;
+		std::vector<std::string> as;
 		split( sCharDir, "/", as );
 		m_sCharacterID = as.back();
 	}
 
 	{
-		std::vector<RString> as;
+		std::vector<std::string> as;
 		GetDirListing( m_sCharDir+"card.png", as, false, true );
 		GetDirListing( m_sCharDir+"card.jpg", as, false, true );
 		GetDirListing( m_sCharDir+"card.jpeg", as, false, true );
@@ -42,7 +42,7 @@ bool Character::Load( RString sCharDir )
 	}
 
 	{
-		std::vector<RString> as;
+		std::vector<std::string> as;
 		GetDirListing( m_sCharDir+"icon.png", as, false, true );
 		GetDirListing( m_sCharDir+"icon.jpg", as, false, true );
 		GetDirListing( m_sCharDir+"icon.jpeg", as, false, true );
@@ -68,52 +68,52 @@ bool Character::Load( RString sCharDir )
 	ini.GetValue( "Character", "DisplayName", m_sDisplayName );
 
 	// get optional InitCommand
-	RString s;
+	std::string s;
 	ini.GetValue( "Character", "InitCommand", s );
 	m_cmdInit = ActorUtil::ParseActorCommands( s );
 
 	return true;
 }
 
-RString GetRandomFileInDir( RString sDir )
+std::string GetRandomFileInDir( std::string sDir )
 {
-	std::vector<RString> asFiles;
+	std::vector<std::string> asFiles;
 	GetDirListing( sDir, asFiles, false, true );
 	if( asFiles.empty() )
-		return RString();
+		return std::string();
 	else
 		return asFiles[RandomInt(asFiles.size())];
 }
 
-RString Character::GetModelPath() const
+std::string Character::GetModelPath() const
 {
-	RString s = m_sCharDir + "model.txt";
+	std::string s = m_sCharDir + "model.txt";
 	if( DoesFileExist(s) )
 		return s;
 	else
-		return RString();
+		return std::string();
 }
 
-RString Character::GetRestAnimationPath() const	{ return DerefRedir(GetRandomFileInDir(m_sCharDir + "Rest/")); }
-RString Character::GetWarmUpAnimationPath() const { return DerefRedir(GetRandomFileInDir(m_sCharDir + "WarmUp/")); }
-RString Character::GetDanceAnimationPath() const { return DerefRedir(GetRandomFileInDir(m_sCharDir + "Dance/")); }
-RString Character::GetTakingABreakPath() const
+std::string Character::GetRestAnimationPath() const	{ return DerefRedir(GetRandomFileInDir(m_sCharDir + "Rest/")); }
+std::string Character::GetWarmUpAnimationPath() const { return DerefRedir(GetRandomFileInDir(m_sCharDir + "WarmUp/")); }
+std::string Character::GetDanceAnimationPath() const { return DerefRedir(GetRandomFileInDir(m_sCharDir + "Dance/")); }
+std::string Character::GetTakingABreakPath() const
 {
-	std::vector<RString> as;
+	std::vector<std::string> as;
 	GetDirListing( m_sCharDir+"break.png", as, false, true );
 	GetDirListing( m_sCharDir+"break.jpg", as, false, true );
 	GetDirListing( m_sCharDir+"break.jpeg", as, false, true );
 	GetDirListing( m_sCharDir+"break.gif", as, false, true );
 	GetDirListing( m_sCharDir+"break.bmp", as, false, true );
 	if( as.empty() )
-		return RString();
+		return std::string();
 	else
 		return as[0];
 }
 
-RString Character::GetSongSelectIconPath() const
+std::string Character::GetSongSelectIconPath() const
 {
-	std::vector<RString> as;
+	std::vector<std::string> as;
 	// first try and find an icon specific to the select music screen
 	// so you can have different icons for music select / char select
 	GetDirListing( m_sCharDir+"selectmusicicon.png", as, false, true );
@@ -131,7 +131,7 @@ RString Character::GetSongSelectIconPath() const
 		GetDirListing( m_sCharDir+"icon.gif", as, false, true );
 		GetDirListing( m_sCharDir+"icon.bmp", as, false, true );
 		if( as.empty() )
-			return RString();
+			return std::string();
 		else
 			return as[0];
 	}
@@ -139,9 +139,9 @@ RString Character::GetSongSelectIconPath() const
 		return as[0];
 }
 
-RString Character::GetStageIconPath() const
+std::string Character::GetStageIconPath() const
 {
-	std::vector<RString> as;
+	std::vector<std::string> as;
 	// first try and find an icon specific to the select music screen
 	// so you can have different icons for music select / char select
 	GetDirListing( m_sCharDir+"stageicon.png", as, false, true );
@@ -159,7 +159,7 @@ RString Character::GetStageIconPath() const
 		GetDirListing( m_sCharDir+"card.gif", as, false, true );
 		GetDirListing( m_sCharDir+"card.bmp", as, false, true );
 		if( as.empty() )
-			return RString();
+			return std::string();
 		else
 			return as[0];
 	}
@@ -193,7 +193,7 @@ void Character::DemandGraphics()
 	++m_iPreloadRefcount;
 	if( m_iPreloadRefcount == 1 )
 	{
-		RString s = GetIconPath();
+		std::string s = GetIconPath();
 		if( !s.empty() )
 			m_Preload.Load( s );
 	}
@@ -213,17 +213,17 @@ void Character::UndemandGraphics()
 class LunaCharacter: public Luna<Character>
 {
 public:
-	static int GetCardPath( T* p, lua_State *L )			{ lua_pushstring(L, p->GetCardPath() ); return 1; }
-	static int GetIconPath( T* p, lua_State *L )			{ lua_pushstring(L, p->GetIconPath() ); return 1; }
-	static int GetSongSelectIconPath( T* p, lua_State *L )	{ lua_pushstring(L, p->GetSongSelectIconPath() ); return 1; }
-	static int GetStageIconPath( T* p, lua_State *L )		{ lua_pushstring(L, p->GetStageIconPath() ); return 1; }
-	static int GetModelPath( T* p, lua_State *L )			{ lua_pushstring(L, p->GetModelPath() ); return 1; }
-	static int GetRestAnimationPath( T* p, lua_State *L )			{ lua_pushstring(L, p->GetRestAnimationPath() ); return 1; }
-	static int GetWarmUpAnimationPath( T* p, lua_State *L )			{ lua_pushstring(L, p->GetWarmUpAnimationPath() ); return 1; }
-	static int GetDanceAnimationPath( T* p, lua_State *L )			{ lua_pushstring(L, p->GetDanceAnimationPath() ); return 1; }
-	static int GetCharacterDir( T* p, lua_State *L )			{ lua_pushstring(L, p->m_sCharDir ); return 1; }
-	static int GetCharacterID( T* p, lua_State *L )			{ lua_pushstring(L, p->m_sCharacterID ); return 1; }
-	static int GetDisplayName( T* p, lua_State *L )			{ lua_pushstring(L, p->GetDisplayName() ); return 1; }
+	static int GetCardPath( T* p, lua_State *L )			{ lua_pushstring(L, p->GetCardPath().c_str() ); return 1; }
+	static int GetIconPath( T* p, lua_State *L )			{ lua_pushstring(L, p->GetIconPath().c_str() ); return 1; }
+	static int GetSongSelectIconPath( T* p, lua_State *L )	{ lua_pushstring(L, p->GetSongSelectIconPath().c_str() ); return 1; }
+	static int GetStageIconPath( T* p, lua_State *L )		{ lua_pushstring(L, p->GetStageIconPath().c_str() ); return 1; }
+	static int GetModelPath( T* p, lua_State *L )			{ lua_pushstring(L, p->GetModelPath().c_str() ); return 1; }
+	static int GetRestAnimationPath( T* p, lua_State *L )			{ lua_pushstring(L, p->GetRestAnimationPath().c_str() ); return 1; }
+	static int GetWarmUpAnimationPath( T* p, lua_State *L )			{ lua_pushstring(L, p->GetWarmUpAnimationPath().c_str() ); return 1; }
+	static int GetDanceAnimationPath( T* p, lua_State *L )			{ lua_pushstring(L, p->GetDanceAnimationPath().c_str() ); return 1; }
+	static int GetCharacterDir( T* p, lua_State *L )			{ lua_pushstring(L, p->m_sCharDir.c_str() ); return 1; }
+	static int GetCharacterID( T* p, lua_State *L )			{ lua_pushstring(L, p->m_sCharacterID.c_str() ); return 1; }
+	static int GetDisplayName( T* p, lua_State *L )			{ lua_pushstring(L, p->GetDisplayName().c_str() ); return 1; }
 
 	LunaCharacter()
 	{

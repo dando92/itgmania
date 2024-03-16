@@ -3,9 +3,9 @@
 #include "windows.h"
 #include "VersionHelpers.h"
 
-RString hr_ssprintf( int hr, const char *fmt, ... );
+std::string hr_ssprintf( int hr, const char *fmt, ... );
 
-RString GetErrorString(HRESULT hr);
+std::string GetErrorString(HRESULT hr);
 
 #endif
 

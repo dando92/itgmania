@@ -15,6 +15,7 @@
 #include "GameState.h"
 #include "Game.h"
 #include "RageLog.h"
+#include "StringUtil.h"
 
 bool LightsDriver_Linux_Leds::WriteLight(const char *filename, bool state)
 {
@@ -49,7 +50,7 @@ bool LightsDriver_Linux_Leds::IsDance()
 	pInput = &GAMESTATE->GetCurrentGame()->m_InputScheme;
 	sInputName = pInput->m_szName;
 
-	return sInputName.EqualsNoCase("dance");
+	return StringUtil::EqualsNoCase(sInputName, "dance");
 }
 
 bool LightsDriver_Linux_Leds::IsPump()
@@ -57,7 +58,7 @@ bool LightsDriver_Linux_Leds::IsPump()
 	pInput = &GAMESTATE->GetCurrentGame()->m_InputScheme;
 	sInputName = pInput->m_szName;
 
-	return sInputName.EqualsNoCase("pump");
+	return StringUtil::EqualsNoCase(sInputName, "pump");
 }
 
 void LightsDriver_Linux_Leds::SetLight(const char *filename, bool previous, bool desired)

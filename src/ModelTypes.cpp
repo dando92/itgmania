@@ -39,17 +39,17 @@ void AnimatedTexture::LoadBlank()
 	vFrames.push_back( state );
 }
 
-void AnimatedTexture::Load( const RString &sTexOrIniPath )
+void AnimatedTexture::Load( const std::string &sTexOrIniPath )
 {
 	ASSERT( vFrames.empty() );	// don't load more than once
 
-	m_bSphereMapped = sTexOrIniPath.find("sphere") != RString::npos;
+	m_bSphereMapped = sTexOrIniPath.find("sphere") != std::string::npos;
 	if( sTexOrIniPath.find("add") != std::string::npos )
 		m_BlendMode = BLEND_ADD;
 	else
 		m_BlendMode = BLEND_NORMAL;
 
-	if( GetExtension(sTexOrIniPath).CompareNoCase("ini")==0 )
+	if( StringUtil::EqualsNoCase(GetExtension(sTexOrIniPath), "ini") )
 	{
 		IniFile ini;
 		if( !ini.ReadFile( sTexOrIniPath ) )
@@ -66,16 +66,16 @@ void AnimatedTexture::Load( const RString &sTexOrIniPath )
 
 		for( int i=0; i<1000; i++ )
 		{
-			RString sFileKey = ssprintf( "Frame%04d", i );
-			RString sDelayKey = ssprintf( "Delay%04d", i );
+			std::string sFileKey = ssprintf( "Frame%04d", i );
+			std::string sDelayKey = ssprintf( "Delay%04d", i );
 
-			RString sFileName;
+			std::string sFileName;
 			float fDelay = 0;
 			if( pAnimatedTexture->GetAttrValue( sFileKey, sFileName ) &&
 				pAnimatedTexture->GetAttrValue( sDelayKey, fDelay ) )
 			{
-				RString sTranslateXKey = ssprintf( "TranslateX%04d", i );
-				RString sTranslateYKey = ssprintf( "TranslateY%04d", i );
+				std::string sTranslateXKey = ssprintf( "TranslateX%04d", i );
+				std::string sTranslateYKey = ssprintf( "TranslateY%04d", i );
 
 				RageVector2 vOffset(0,0);
 				pAnimatedTexture->GetAttrValue( sTranslateXKey, vOffset.x );
@@ -216,16 +216,16 @@ RageVector2 AnimatedTexture::GetTextureTranslate()
 
 #define THROW RageException::Throw( "Parse error in \"%s\" at line %d: \"%s\".", sPath.c_str(), iLineNum, sLine.c_str() )
 
-bool msAnimation::LoadMilkshapeAsciiBones( RString sAniName, RString sPath )
+bool msAnimation::LoadMilkshapeAsciiBones( std::string sAniName, std::string sPath )
 {
 	FixSlashesInPlace(sPath);
-	const RString sDir = Dirname( sPath );
+	const std::string sDir = Dirname( sPath );
 
 	RageFile f;
 	if ( !f.Open(sPath) )
 		RageException::Throw( "Model:: Could not open \"%s\": %s", sPath.c_str(), f.GetError().c_str() );
 
-	RString sLine;
+	std::string sLine;
 	int iLineNum = 0;
 
 	msAnimation &Animation = *this;
@@ -235,12 +235,12 @@ bool msAnimation::LoadMilkshapeAsciiBones( RString sAniName, RString sPath )
 	{
 		iLineNum++;
 
-		if (!strncmp (sLine, "//", 2))
+		if (!strncmp (sLine.c_str(), "//", 2))
 			continue;
 
 		// bones
 		int nNumBones = 0;
-		if( sscanf (sLine, "Bones: %d", &nNumBones) != 1 )
+		if( sscanf (sLine.c_str(), "Bones: %d", &nNumBones) != 1 )
 			continue;
 
 		char szName[MS_MAX_NAME];
@@ -254,7 +254,7 @@ bool msAnimation::LoadMilkshapeAsciiBones( RString sAniName, RString sPath )
 			// name
 			if( f.GetLine( sLine ) <= 0 )
 				THROW;
-			if (sscanf(sLine, "\"%31[^\"]\"", szName) != 1)
+			if (sscanf(sLine.c_str(), "\"%31[^\"]\"", szName) != 1)
 				THROW;
 			Bone.sName = szName;
 
@@ -262,7 +262,7 @@ bool msAnimation::LoadMilkshapeAsciiBones( RString sAniName, RString sPath )
 			if( f.GetLine( sLine ) <= 0 )
 				THROW;
 			strcpy(szName, "");
-			sscanf(sLine, "\"%31[^\"]\"", szName);
+			sscanf(sLine.c_str(), "\"%31[^\"]\"", szName);
 
 			Bone.sParentName = szName;
 
@@ -272,7 +272,7 @@ bool msAnimation::LoadMilkshapeAsciiBones( RString sAniName, RString sPath )
 				THROW;
 
 			int nFlags;
-			if (sscanf (sLine, "%d %f %f %f %f %f %f",
+			if (sscanf (sLine.c_str(), "%d %f %f %f %f %f %f",
 				&nFlags,
 				&Position[0], &Position[1], &Position[2],
 				&Rotation[0], &Rotation[1], &Rotation[2]) != 7)
@@ -289,7 +289,7 @@ bool msAnimation::LoadMilkshapeAsciiBones( RString sAniName, RString sPath )
 			if( f.GetLine( sLine ) <= 0 )
 				THROW;
 			int nNumPositionKeys = 0;
-			if (sscanf (sLine, "%d", &nNumPositionKeys) != 1)
+			if (sscanf (sLine.c_str(), "%d", &nNumPositionKeys) != 1)
 				THROW;
 
 			Bone.PositionKeys.resize( nNumPositionKeys );
@@ -300,7 +300,7 @@ bool msAnimation::LoadMilkshapeAsciiBones( RString sAniName, RString sPath )
 					THROW;
 
 				float fTime;
-				if (sscanf (sLine, "%f %f %f %f", &fTime, &Position[0], &Position[1], &Position[2]) != 4)
+				if (sscanf (sLine.c_str(), "%f %f %f %f", &fTime, &Position[0], &Position[1], &Position[2]) != 4)
 					THROW;
 
 				msPositionKey key;
@@ -313,7 +313,7 @@ bool msAnimation::LoadMilkshapeAsciiBones( RString sAniName, RString sPath )
 			if( f.GetLine( sLine ) <= 0 )
 				THROW;
 			int nNumRotationKeys = 0;
-			if (sscanf (sLine, "%d", &nNumRotationKeys) != 1)
+			if (sscanf (sLine.c_str(), "%d", &nNumRotationKeys) != 1)
 				THROW;
 
 			Bone.RotationKeys.resize( nNumRotationKeys );
@@ -324,7 +324,7 @@ bool msAnimation::LoadMilkshapeAsciiBones( RString sAniName, RString sPath )
 					THROW;
 
 				float fTime;
-				if (sscanf (sLine, "%f %f %f %f", &fTime, &Rotation[0], &Rotation[1], &Rotation[2]) != 4)
+				if (sscanf (sLine.c_str(), "%f %f %f %f", &fTime, &Rotation[0], &Rotation[1], &Rotation[2]) != 4)
 					THROW;
 				Rotation = RadianToDegree(Rotation);
 

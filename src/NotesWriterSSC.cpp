@@ -22,7 +22,7 @@
  * @brief Turn a vector of lines into a single line joined by newline characters.
  * @param lines the list of lines to join.
  * @return the joined lines. */
-static RString JoinLineList( std::vector<RString> &lines )
+static std::string JoinLineList( std::vector<std::string> &lines )
 {
 	for( unsigned i = 0; i < lines.size(); ++i )
 		TrimRight( lines[i] );
@@ -39,10 +39,10 @@ static RString JoinLineList( std::vector<RString> &lines )
 // A utility class to write timing tags more easily!
 struct TimingTagWriter {
 
-	std::vector<RString> *m_pvsLines;
-	RString m_sNext;
+	std::vector<std::string> *m_pvsLines;
+	std::string m_sNext;
 
-	TimingTagWriter( std::vector<RString>* pvsLines ): m_pvsLines (pvsLines) { }
+	TimingTagWriter( std::vector<std::string>* pvsLines ): m_pvsLines (pvsLines) { }
 
 	void Write( const int row, const char *value )
 	{
@@ -50,19 +50,19 @@ struct TimingTagWriter {
 		m_sNext = ",";
 	}
 
-	void Write( const int row, const float value )        { Write( row, ssprintf( "%.6f",  value ) ); }
-	void Write( const int row, const int value )          { Write( row, ssprintf( "%d",    value ) ); }
-	void Write( const int row, const int a, const int b ) { Write( row, ssprintf( "%d=%d", a, b ) );  }
-	void Write( const int row, const float a, const float b ) { Write( row, ssprintf( "%.6f=%.6f", a, b) ); }
+	void Write( const int row, const float value )        { Write( row, ssprintf( "%.6f",  value ).c_str() ); }
+	void Write( const int row, const int value )          { Write( row, ssprintf( "%d",    value ).c_str() ); }
+	void Write( const int row, const int a, const int b ) { Write( row, ssprintf( "%d=%d", a, b ).c_str() );  }
+	void Write( const int row, const float a, const float b ) { Write( row, ssprintf( "%.6f=%.6f", a, b).c_str() ); }
 	void Write( const int row, const float a, const float b, const unsigned short c )
-		{ Write( row, ssprintf( "%.6f=%.6f=%hd", a, b, c) ); }
+		{ Write( row, ssprintf( "%.6f=%.6f=%hd", a, b, c).c_str() ); }
 
-	void Init( const RString sTag ) { m_sNext = "#" + sTag + ":"; }
-	void Finish( ) { m_pvsLines->push_back( ( m_sNext != "," ? m_sNext : RString("") ) + ";" ); }
+	void Init( const std::string sTag ) { m_sNext = "#" + sTag + ":"; }
+	void Finish( ) { m_pvsLines->push_back( ( m_sNext != "," ? m_sNext : std::string("") ) + ";" ); }
 
 };
 
-static void GetTimingTags( std::vector<RString> &lines, const TimingData &timing, bool bIsSong = false )
+static void GetTimingTags( std::vector<std::string> &lines, const TimingData &timing, bool bIsSong = false )
 {
 	TimingTagWriter w ( &lines );
 
@@ -238,10 +238,10 @@ static void WriteGlobalTags( RageFile &f, const Song &out )
 	}
 
 	{
-		std::vector<RString> vs = out.GetInstrumentTracksToVectorString();
+		std::vector<std::string> vs = out.GetInstrumentTracksToVectorString();
 		if( !vs.empty() )
 		{
-			RString s = join( ",", vs );
+			std::string s = join( ",", vs );
 			f.PutLine( "#INSTRUMENTTRACK:" + s + ";\n" );
 		}
 	}
@@ -359,10 +359,10 @@ static void WriteGlobalTags( RageFile &f, const Song &out )
  * @param song the Song in question.
  * @param in the Steps in question.
  * @param bSavingCache a flag to see if we're saving certain cache data.
- * @return the NoteData in RString form. */
-static RString GetSSCNoteData( const Song &song, const Steps &in, bool bSavingCache )
+ * @return the NoteData in std::string form. */
+static std::string GetSSCNoteData( const Song &song, const Steps &in, bool bSavingCache )
 {
-	std::vector<RString> lines;
+	std::vector<std::string> lines;
 
 	lines.push_back( "" );
 	// Escape to prevent some clown from making a comment of "\r\n;"
@@ -376,13 +376,13 @@ static RString GetSSCNoteData( const Song &song, const Steps &in, bool bSavingCa
 	lines.push_back( ssprintf( "#DIFFICULTY:%s;", DifficultyToString(in.GetDifficulty()).c_str() ) );
 	lines.push_back( ssprintf( "#METER:%d;", in.GetMeter() ) );
 
-	const RString& music= in.GetMusicFile();
+	const std::string& music= in.GetMusicFile();
 	if(!music.empty())
 	{
 		lines.push_back(ssprintf("#MUSIC:%s;", music.c_str()));
 	}
 
-	std::vector<RString> asRadarValues;
+	std::vector<std::string> asRadarValues;
 	FOREACH_PlayerNumber( pn )
 	{
 		const RadarValues &rv = in.GetRadarValues( pn );
@@ -432,7 +432,7 @@ static RString GetSSCNoteData( const Song &song, const Steps &in, bool bSavingCa
 	}
 	else
 	{
-		RString sNoteData;
+		std::string sNoteData;
 		in.GetSMNoteData( sNoteData );
 
 		lines.push_back( song.m_vsKeysoundFile.empty() ? "#NOTES:" : "#NOTES2:" );
@@ -444,7 +444,7 @@ static RString GetSSCNoteData( const Song &song, const Steps &in, bool bSavingCa
 	return JoinLineList( lines );
 }
 
-bool NotesWriterSSC::Write( RString sPath, const Song &out, const std::vector<Steps*>& vpStepsToSave, bool bSavingCache )
+bool NotesWriterSSC::Write( std::string sPath, const Song &out, const std::vector<Steps*>& vpStepsToSave, bool bSavingCache )
 {
 	int flags = RageFile::WRITE;
 
@@ -478,7 +478,7 @@ bool NotesWriterSSC::Write( RString sPath, const Song &out, const std::vector<St
 	// Save specified Steps to this file
 	for (Steps const *pSteps : vpStepsToSave)
 	{
-		RString sTag = GetSSCNoteData( out, *pSteps, bSavingCache );
+		std::string sTag = GetSSCNoteData( out, *pSteps, bSavingCache );
 		f.PutLine( sTag );
 	}
 	if( f.Flush() == -1 )
@@ -487,13 +487,13 @@ bool NotesWriterSSC::Write( RString sPath, const Song &out, const std::vector<St
 	return true;
 }
 
-void NotesWriterSSC::GetEditFileContents( const Song *pSong, const Steps *pSteps, RString &sOut )
+void NotesWriterSSC::GetEditFileContents( const Song *pSong, const Steps *pSteps, std::string &sOut )
 {
 	sOut = "";
-	RString sDir = pSong->GetSongDir();
+	std::string sDir = pSong->GetSongDir();
 
 	// "Songs/foo/bar"; strip off "Songs/".
-	std::vector<RString> asParts;
+	std::vector<std::string> asParts;
 	split( sDir, "/", asParts );
 	if( asParts.size() )
 		sDir = join( "/", asParts.begin()+1, asParts.end() );
@@ -501,12 +501,12 @@ void NotesWriterSSC::GetEditFileContents( const Song *pSong, const Steps *pSteps
 	sOut += GetSSCNoteData( *pSong, *pSteps, false );
 }
 
-RString NotesWriterSSC::GetEditFileName( const Song *pSong, const Steps *pSteps )
+std::string NotesWriterSSC::GetEditFileName( const Song *pSong, const Steps *pSteps )
 {
 	/* Try to make a unique name. This isn't guaranteed. Edit descriptions are
 	 * case-sensitive, filenames on disk are usually not, and we decimate certain
 	 * characters for FAT filesystems. */
-	RString sFile = pSong->GetTranslitFullTitle() + " - " + pSteps->GetDescription();
+	std::string sFile = pSong->GetTranslitFullTitle() + " - " + pSteps->GetDescription();
 
 	// HACK:
 	if( pSteps->m_StepsType == StepsType_dance_double )
@@ -520,11 +520,11 @@ RString NotesWriterSSC::GetEditFileName( const Song *pSong, const Steps *pSteps 
 
 static LocalizedString DESTINATION_ALREADY_EXISTS	("NotesWriterSSC", "Error renaming file.  Destination file '%s' already exists.");
 static LocalizedString ERROR_WRITING_FILE		("NotesWriterSSC", "Error writing file '%s'.");
-bool NotesWriterSSC::WriteEditFileToMachine( const Song *pSong, Steps *pSteps, RString &sErrorOut )
+bool NotesWriterSSC::WriteEditFileToMachine( const Song *pSong, Steps *pSteps, std::string &sErrorOut )
 {
-	RString sDir = PROFILEMAN->GetProfileDir( ProfileSlot_Machine ) + EDIT_STEPS_SUBDIR;
+	std::string sDir = PROFILEMAN->GetProfileDir( ProfileSlot_Machine ) + EDIT_STEPS_SUBDIR;
 
-	RString sPath = sDir + GetEditFileName(pSong,pSteps);
+	std::string sPath = sDir + GetEditFileName(pSong,pSteps);
 
 	// Check to make sure that we're not clobering an existing file before opening.
 	bool bFileNameChanging =
@@ -532,22 +532,22 @@ bool NotesWriterSSC::WriteEditFileToMachine( const Song *pSong, Steps *pSteps, R
 		pSteps->GetFilename() != sPath;
 	if( bFileNameChanging  &&  DoesFileExist(sPath) )
 	{
-		sErrorOut = ssprintf( DESTINATION_ALREADY_EXISTS.GetValue(), sPath.c_str() );
+		sErrorOut = ssprintf( DESTINATION_ALREADY_EXISTS.GetValue().c_str(), sPath.c_str() );
 		return false;
 	}
 
 	RageFile f;
 	if( !f.Open(sPath, RageFile::WRITE | RageFile::SLOW_FLUSH) )
 	{
-		sErrorOut = ssprintf( ERROR_WRITING_FILE.GetValue(), sPath.c_str() );
+		sErrorOut = ssprintf( ERROR_WRITING_FILE.GetValue().c_str(), sPath.c_str() );
 		return false;
 	}
 
-	RString sTag;
+	std::string sTag;
 	GetEditFileContents( pSong, pSteps, sTag );
 	if( f.PutLine(sTag) == -1 || f.Flush() == -1 )
 	{
-		sErrorOut = ssprintf( ERROR_WRITING_FILE.GetValue(), sPath.c_str() );
+		sErrorOut = ssprintf( ERROR_WRITING_FILE.GetValue().c_str(), sPath.c_str() );
 		return false;
 	}
 

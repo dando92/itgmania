@@ -17,19 +17,19 @@
 
 #define TWEEN_QUEUE_MAX 50
 
-RString unique_name();
-void convert_xmls_in_dir(RString const& dirname);
-void convert_xml_file(RString const& fname, RString const& dirname);
-RString maybe_conv_pos(RString pos, RString (*conv_func)(float p));
-RString add_extension_to_relative_path_from_found_file(
-	RString const& relative_path, RString const& found_file);
+std::string unique_name();
+void convert_xmls_in_dir(std::string const& dirname);
+void convert_xml_file(std::string const& fname, std::string const& dirname);
+std::string maybe_conv_pos(std::string pos, std::string (*conv_func)(float p));
+std::string add_extension_to_relative_path_from_found_file(
+	std::string const& relative_path, std::string const& found_file);
 
-RString unique_name(RString const& type)
+std::string unique_name(std::string const& type)
 {
 	static char const* name_chars= "abcdefghijklmnopqrstuvwxyz";
 	static int name_count= 0;
 	int curr_name= name_count;
-	RString ret= "xtl_" + type + "_"; // Minimize the chance of a name collision.
+	std::string ret= "xtl_" + type + "_"; // Minimize the chance of a name collision.
 	ret= ret + name_chars[curr_name%26];
 	while(curr_name / 26 > 0)
 	{
@@ -40,11 +40,11 @@ RString unique_name(RString const& type)
 	return ret;
 }
 
-void convert_xmls_in_dir(RString const& dirname)
+void convert_xmls_in_dir(std::string const& dirname)
 {
-	std::vector<RString> listing;
+	std::vector<std::string> listing;
 	FILEMAN->GetDirListing(dirname, listing, false, true);
-	for(std::vector<RString>::iterator curr_file= listing.begin();
+	for(std::vector<std::string>::iterator curr_file= listing.begin();
 		curr_file != listing.end(); ++curr_file)
 	{
 		switch(ActorUtil::GetFileType(*curr_file))
@@ -61,17 +61,17 @@ void convert_xmls_in_dir(RString const& dirname)
 	}
 }
 
-RString convert_xpos(float x)
+std::string convert_xpos(float x)
 {
 	return "SCREEN_CENTER_X + " + std::to_string(x - 320.0f);
 }
 
-RString convert_ypos(float y)
+std::string convert_ypos(float y)
 {
 	return "SCREEN_CENTER_Y + " + std::to_string(y - 240.0f);
 }
 
-RString maybe_conv_pos(RString pos, RString (*conv_func)(float p))
+std::string maybe_conv_pos(std::string pos, std::string (*conv_func)(float p))
 {
 	float f;
 	if(pos >> f)
@@ -81,7 +81,7 @@ RString maybe_conv_pos(RString pos, RString (*conv_func)(float p))
 	return pos;
 }
 
-std::size_t after_slash_or_zero(RString const& s)
+std::size_t after_slash_or_zero(std::string const& s)
 {
 	std::size_t ret= s.rfind('/');
 	if(ret != std::string::npos)
@@ -91,16 +91,16 @@ std::size_t after_slash_or_zero(RString const& s)
 	return 0;
 }
 
-RString add_extension_to_relative_path_from_found_file(
-	RString const& relative_path, RString const& found_file)
+std::string add_extension_to_relative_path_from_found_file(
+	std::string const& relative_path, std::string const& found_file)
 {
 	std::size_t rel_last_slash= after_slash_or_zero(relative_path);
 	std::size_t found_last_slash= after_slash_or_zero(found_file);
-	return relative_path.Left(rel_last_slash) +
+	return relative_path.substr(0, rel_last_slash) +
 		found_file.substr(found_last_slash, std::string::npos);
 }
 
-bool verify_arg_count(RString cmd, std::vector<RString>& args, std::size_t req)
+bool verify_arg_count(std::string cmd, std::vector<std::string>& args, std::size_t req)
 {
 	if(args.size() < req)
 	{
@@ -110,15 +110,15 @@ bool verify_arg_count(RString cmd, std::vector<RString>& args, std::size_t req)
 	return true;
 }
 
-typedef void (*arg_converter_t)(std::vector<RString>& args);
+typedef void (*arg_converter_t)(std::vector<std::string>& args);
 
-std::map<RString, arg_converter_t> arg_converters;
-std::map<RString, std::size_t> tween_counters;
-std::set<RString> fields_that_are_strings;
-std::map<RString, RString> chunks_to_replace;
+std::map<std::string, arg_converter_t> arg_converters;
+std::map<std::string, std::size_t> tween_counters;
+std::set<std::string> fields_that_are_strings;
+std::map<std::string, std::string> chunks_to_replace;
 
 #define COMMON_ARG_VERIFY(count) if(!verify_arg_count(args[0], args, count)) return;
-void x_conv(std::vector<RString>& args)
+void x_conv(std::vector<std::string>& args)
 {
 	COMMON_ARG_VERIFY(2);
 	float pos;
@@ -127,7 +127,7 @@ void x_conv(std::vector<RString>& args)
 		args[1]= convert_xpos(pos);
 	}
 }
-void y_conv(std::vector<RString>& args)
+void y_conv(std::vector<std::string>& args)
 {
 	COMMON_ARG_VERIFY(2);
 	float pos;
@@ -136,16 +136,16 @@ void y_conv(std::vector<RString>& args)
 		args[1]= convert_ypos(pos);
 	}
 }
-void string_arg_conv(std::vector<RString>& args)
+void string_arg_conv(std::vector<std::string>& args)
 {
 	COMMON_ARG_VERIFY(2);
 	args[1]= "\"" + args[1] + "\"";
 }
-void lower_string_conv(std::vector<RString>& args)
+void lower_string_conv(std::vector<std::string>& args)
 {
-	args[0].MakeLower();
+	StringUtil::MakeLower(args[0]);
 }
-void hidden_conv(std::vector<RString>& args)
+void hidden_conv(std::vector<std::string>& args)
 {
 	COMMON_ARG_VERIFY(2);
 	args[0]= "visible";
@@ -158,10 +158,10 @@ void hidden_conv(std::vector<RString>& args)
 		args[1]= "true";
 	}
 }
-void diffuse_conv(std::vector<RString>& args)
+void diffuse_conv(std::vector<std::string>& args)
 {
 	COMMON_ARG_VERIFY(2);
-	RString retarg;
+	std::string retarg;
 	for(std::size_t i= 1; i < args.size(); ++i)
 	{
 		retarg+= args[i];
@@ -175,15 +175,15 @@ void diffuse_conv(std::vector<RString>& args)
 }
 
 // Prototype for a function that is created by a macro in another translation unit and has no visible prototype, don't do this unless you have a good reason.
-const RString& BlendModeToString(BlendMode);
-const RString& CullModeToString(CullMode);
-void blend_conv(std::vector<RString>& args)
+const std::string& BlendModeToString(BlendMode);
+const std::string& CullModeToString(CullMode);
+void blend_conv(std::vector<std::string>& args)
 {
 	COMMON_ARG_VERIFY(2);
 	for(int i= 0; i < NUM_BlendMode; ++i)
 	{
-		RString blend_str= BlendModeToString(static_cast<BlendMode>(i));
-		blend_str.MakeLower();
+		std::string blend_str= BlendModeToString(static_cast<BlendMode>(i));
+		StringUtil::MakeLower(blend_str);
 		if(args[1] == blend_str)
 		{
 			args[1]= "\"BlendMode_" + BlendModeToString(static_cast<BlendMode>(i)) + "\"";
@@ -191,13 +191,13 @@ void blend_conv(std::vector<RString>& args)
 		}
 	}
 }
-void cull_conv(std::vector<RString>& args)
+void cull_conv(std::vector<std::string>& args)
 {
 	COMMON_ARG_VERIFY(2);
 	for(int i= 0; i < NUM_CullMode; ++i)
 	{
-		RString cull_str= CullModeToString(static_cast<CullMode>(i));
-		cull_str.MakeLower();
+		std::string cull_str= CullModeToString(static_cast<CullMode>(i));
+		StringUtil::MakeLower(cull_str);
 		if(args[1] == cull_str)
 		{
 			args[1]= "\"CullMode_" + CullModeToString(static_cast<CullMode>(i)) + "\"";
@@ -245,12 +245,12 @@ void init_parser_helpers()
 	chunks_to_replace["IsPlayerEnabled(1)"]= "IsPlayerEnabled(PLAYER_2)";
 }
 
-void convert_lua_chunk(RString& chunk_text)
+void convert_lua_chunk(std::string& chunk_text)
 {
-	for(std::map<RString, RString>::iterator chunk= chunks_to_replace.begin();
+	for(std::map<std::string, std::string>::iterator chunk= chunks_to_replace.begin();
 			chunk != chunks_to_replace.end(); ++chunk)
 	{
-		chunk_text.Replace(chunk->first, chunk->second);
+		StringUtil::Replace(chunk_text, chunk->first, chunk->second);
 	}
 }
 
@@ -258,8 +258,8 @@ void convert_lua_chunk(RString& chunk_text)
 // So condition_set_t::iterator->first is the lua to execute for the
 // condition, and condition_set_t::iterator->second is the name of the
 // condition.
-typedef std::map<RString, RString> condition_set_t;
-typedef std::map<RString, RString> field_cont_t;
+typedef std::map<std::string, std::string> condition_set_t;
+typedef std::map<std::string, std::string> field_cont_t;
 struct frame_t
 {
 	int frame;
@@ -269,24 +269,24 @@ struct frame_t
 
 struct actor_template_t
 {
-	RString type;
+	std::string type;
 	field_cont_t fields;
-	RString condition;
-	RString name;
+	std::string condition;
+	std::string name;
 	std::vector<frame_t> frames;
 	std::vector<actor_template_t> children;
-	RString x;
-	RString y;
+	std::string x;
+	std::string y;
 	void make_space_for_frame(int id);
-	void store_cmd(RString const& cmd_name, RString const& full_cmd);
-	void store_field(RString const& field_name, RString const& value, bool cmd_convert, RString const& pref= "", RString const& suf= "");
-	void store_field(RString const& field_name, XNodeValue const* value, bool cmd_convert, RString const& pref= "", RString const& suf= "");
-	void rename_field(RString const& old_name, RString const& new_name);
-	RString get_field(RString const& field_name);
-	void load_frames_from_file(RString const& fname, RString const& rel_path);
-	void load_model_from_file(RString const& fname, RString const& rel_path);
-	void load_node(XNode const& node, RString const& dirname, condition_set_t& conditions);
-	void output_to_file(RageFile* file, RString const& indent);
+	void store_cmd(std::string const& cmd_name, std::string const& full_cmd);
+	void store_field(std::string const& field_name, std::string const& value, bool cmd_convert, std::string const& pref= "", std::string const& suf= "");
+	void store_field(std::string const& field_name, XNodeValue const* value, bool cmd_convert, std::string const& pref= "", std::string const& suf= "");
+	void rename_field(std::string const& old_name, std::string const& new_name);
+	std::string get_field(std::string const& field_name);
+	void load_frames_from_file(std::string const& fname, std::string const& rel_path);
+	void load_model_from_file(std::string const& fname, std::string const& rel_path);
+	void load_node(XNode const& node, std::string const& dirname, condition_set_t& conditions);
+	void output_to_file(RageFile* file, std::string const& indent);
 };
 
 void actor_template_t::make_space_for_frame(int id)
@@ -297,28 +297,28 @@ void actor_template_t::make_space_for_frame(int id)
 	}
 }
 
-void actor_template_t::store_cmd(RString const& cmd_name, RString const& full_cmd)
+void actor_template_t::store_cmd(std::string const& cmd_name, std::string const& full_cmd)
 {
-	if(full_cmd.Left(1) == "%")
+	if(StringUtil::StartsWith(full_cmd, '%'))
 	{
-		RString cmd_text= full_cmd.Right(full_cmd.size()-1);
+		std::string cmd_text= full_cmd.substr(1);
 		convert_lua_chunk(cmd_text);
 		fields[cmd_name]= cmd_text;
 		return;
 	}
-	std::vector<RString> cmds;
+	std::vector<std::string> cmds;
 	split(full_cmd, ";", cmds, true);
 	std::size_t queue_size= 0;
 	// If someone has a simfile that uses a playcommand that pushes tween
 	// states onto the queue, queue size counting will have to be made much
 	// more complex to prevent that from causing an overflow.
-	for(std::vector<RString>::iterator cmd= cmds.begin(); cmd != cmds.end(); ++cmd)
+	for(std::vector<std::string>::iterator cmd= cmds.begin(); cmd != cmds.end(); ++cmd)
 	{
-		std::vector<RString> args;
+		std::vector<std::string> args;
 		split(*cmd, ",", args, true);
 		if(!args.empty())
 		{
-			for(std::vector<RString>::iterator arg= args.begin(); arg != args.end(); ++arg)
+			for(std::vector<std::string>::iterator arg= args.begin(); arg != args.end(); ++arg)
 			{
 				std::size_t first_nonspace= 0;
 				std::size_t last_nonspace= arg->size();
@@ -332,12 +332,12 @@ void actor_template_t::store_cmd(RString const& cmd_name, RString const& full_cm
 				}
 				*arg= arg->substr(first_nonspace, last_nonspace - first_nonspace);
 			}
-			std::map<RString, arg_converter_t>::iterator conv= arg_converters.find(args[0]);
+			std::map<std::string, arg_converter_t>::iterator conv= arg_converters.find(args[0]);
 			if(conv != arg_converters.end())
 			{
 				conv->second(args);
 			}
-			std::map<RString, std::size_t>::iterator counter= tween_counters.find(args[0]);
+			std::map<std::string, std::size_t>::iterator counter= tween_counters.find(args[0]);
 			if(counter != tween_counters.end())
 			{
 				queue_size+= counter->second;
@@ -353,22 +353,22 @@ void actor_template_t::store_cmd(RString const& cmd_name, RString const& full_cm
 		std::size_t num_to_make= (queue_size / TWEEN_QUEUE_MAX) + 1;
 		std::size_t states_per= (queue_size / num_to_make) + 1;
 		std::size_t states_in_curr= 0;
-		RString this_name= cmd_name;
-		std::vector<RString> curr_cmd;
-		for(std::vector<RString>::iterator cmd= cmds.begin(); cmd != cmds.end(); ++cmd)
+		std::string this_name= cmd_name;
+		std::vector<std::string> curr_cmd;
+		for(std::vector<std::string>::iterator cmd= cmds.begin(); cmd != cmds.end(); ++cmd)
 		{
 			curr_cmd.push_back(*cmd);
-			std::vector<RString> args;
+			std::vector<std::string> args;
 			split(*cmd, ",", args, true);
 			if(!args.empty())
 			{
-				std::map<RString, std::size_t>::iterator counter= tween_counters.find(args[0]);
+				std::map<std::string, std::size_t>::iterator counter= tween_counters.find(args[0]);
 				if(counter != tween_counters.end())
 				{
 					states_in_curr+= counter->second;
 					if(states_in_curr >= states_per - 1)
 					{
-						RString next_name= unique_name("cmd");
+						std::string next_name= unique_name("cmd");
 						curr_cmd.push_back("queuecommand,\"" + next_name + "\"");
 						fields[this_name]= "cmd(" + join(";", curr_cmd) + ")";
 						curr_cmd.clear();
@@ -389,16 +389,18 @@ void actor_template_t::store_cmd(RString const& cmd_name, RString const& full_cm
 	}
 }
 
-void actor_template_t::store_field(RString const& field_name, RString const& value, bool cmd_convert, RString const& pref, RString const& suf)
+void actor_template_t::store_field(std::string const& field_name, std::string const& value, bool cmd_convert, std::string const& pref, std::string const& suf)
 {
 	// OITG apparently allowed "Oncommand" as valid.
-	if(field_name.Right(7).MakeLower() != "command")
+	std::string lower = field_name.substr(field_name.size() - 7);
+	StringUtil::MakeLower(lower);
+	if(lower != "command")
 	{
 		cmd_convert= false;
 	}
 	if(cmd_convert)
 	{
-		RString real_field_name= field_name.Left(field_name.size()-7) + "Command";
+		std::string real_field_name= field_name.substr(0, field_name.size()-7) + "Command";
 		store_cmd(real_field_name, value);
 	}
 	else
@@ -407,14 +409,14 @@ void actor_template_t::store_field(RString const& field_name, RString const& val
 	}
 
 }
-void actor_template_t::store_field(RString const& field_name, XNodeValue const* value, bool cmd_convert, RString const& pref, RString const& suf)
+void actor_template_t::store_field(std::string const& field_name, XNodeValue const* value, bool cmd_convert, std::string const& pref, std::string const& suf)
 {
-	RString val;
+	std::string val;
 	value->GetValue(val);
 	store_field(field_name, val, cmd_convert, pref, suf);
 }
 
-void actor_template_t::rename_field(RString const& old_name, RString const& new_name)
+void actor_template_t::rename_field(std::string const& old_name, std::string const& new_name)
 {
 	field_cont_t::iterator old_field= fields.find(old_name);
 	if(old_field == fields.end())
@@ -425,7 +427,7 @@ void actor_template_t::rename_field(RString const& old_name, RString const& new_
 	fields.erase(old_field);
 }
 
-RString actor_template_t::get_field(RString const& field_name)
+std::string actor_template_t::get_field(std::string const& field_name)
 {
 	field_cont_t::iterator field= fields.find(field_name);
 	if(field == fields.end())
@@ -435,7 +437,7 @@ RString actor_template_t::get_field(RString const& field_name)
 	return field->second;
 }
 
-void actor_template_t::load_frames_from_file(RString const& fname, RString const& rel_path)
+void actor_template_t::load_frames_from_file(std::string const& fname, std::string const& rel_path)
 {
 	IniFile ini;
 	if(!ini.ReadFile(fname))
@@ -450,20 +452,19 @@ void actor_template_t::load_frames_from_file(RString const& fname, RString const
 		{
 			// Frame and Delay fields have names of the form "Frame0000" where the
 			// "0000" part is the id of the frame.
-			RString field_type= attr->first.Left(5);
-			if(field_type == "Frame")
+			if(StringUtil::StartsWith(attr->first, "Frame"))
 			{
-				int id= StringToInt(attr->first.Right(attr->first.size()-5));
+				int id= StringToInt(attr->first.substr(5));
 				make_space_for_frame(id);
 				attr->second->GetValue(frames[id].frame);
 			}
-			else if(field_type == "Delay")
+			else if(StringUtil::StartsWith(attr->first, "Delay"))
 			{
-				int id= StringToInt(attr->first.Right(attr->first.size()-5));
+				int id= StringToInt(attr->first.substr(5));
 				make_space_for_frame(id);
 				attr->second->GetValue(frames[id].delay);
 			}
-			else if(field_type == "Textu")
+			else if(StringUtil::StartsWith(attr->first, "Textu"))
 			{
 				store_field("Texture", attr->second, false, rel_path, "");
 			}
@@ -475,7 +476,7 @@ void actor_template_t::load_frames_from_file(RString const& fname, RString const
 	}
 }
 
-void actor_template_t::load_model_from_file(RString const& fname, RString const& rel_path)
+void actor_template_t::load_model_from_file(std::string const& fname, std::string const& rel_path)
 {
 	IniFile ini;
 	if(!ini.ReadFile(fname))
@@ -493,7 +494,7 @@ void actor_template_t::load_model_from_file(RString const& fname, RString const&
 	}
 }
 
-void actor_template_t::load_node(XNode const& node, RString const& dirname, condition_set_t& conditions)
+void actor_template_t::load_node(XNode const& node, std::string const& dirname, condition_set_t& conditions)
 {
 	type= node.GetName();
 	bool type_set_by_automagic= false;
@@ -506,7 +507,7 @@ void actor_template_t::load_node(XNode const& node, RString const& dirname, cond
 		}
 		else if(attr->first == "Condition")
 		{
-			RString cond_str;
+			std::string cond_str;
 			attr->second->GetValue(cond_str);
 			condition_set_t::iterator cond= conditions.find(cond_str);
 			if(cond == conditions.end())
@@ -538,9 +539,9 @@ void actor_template_t::load_node(XNode const& node, RString const& dirname, cond
 		}
 		else if(attr->first == "File")
 		{
-			RString relative_path;
+			std::string relative_path;
 			attr->second->GetValue(relative_path);
-			RString sfname= dirname + relative_path;
+			std::string sfname= dirname + relative_path;
 			if(FILEMAN->IsADirectory(sfname))
 			{
 				set_type("LoadActor");
@@ -548,16 +549,16 @@ void actor_template_t::load_node(XNode const& node, RString const& dirname, cond
 			}
 			else
 			{
-				std::vector<RString> files_in_dir;
+				std::vector<std::string> files_in_dir;
 				FILEMAN->GetDirListing(sfname + "*", files_in_dir, false, true);
 				int handled_level= 0;
-				RString found_file= "";
-				for(std::vector<RString>::iterator file= files_in_dir.begin();
+				std::string found_file= "";
+				for(std::vector<std::string>::iterator file= files_in_dir.begin();
 						file != files_in_dir.end() && handled_level < 2; ++file)
 				{
-					RString extension= GetExtension(*file);
+					std::string extension= GetExtension(*file);
 					FileType file_type= ActorUtil::GetFileType(*file);
-					RString this_relative=
+					std::string this_relative=
 						add_extension_to_relative_path_from_found_file(relative_path, *file);
 					switch(file_type)
 					{
@@ -614,7 +615,7 @@ void actor_template_t::load_node(XNode const& node, RString const& dirname, cond
 				{
 					if(!files_in_dir.empty())
 					{
-						RString this_relative=
+						std::string this_relative=
 							add_extension_to_relative_path_from_found_file(relative_path, files_in_dir[0]);
 						store_field("File", this_relative, false);
 					}
@@ -651,7 +652,7 @@ void actor_template_t::load_node(XNode const& node, RString const& dirname, cond
 	}
 	if(!x.empty() || !y.empty())
 	{
-		RString pos_init= "xy," + x + "," + y;
+		std::string pos_init= "xy," + x + "," + y;
 		field_cont_t::iterator init= fields.find("InitCommand");
 		if(init != fields.end())
 		{
@@ -662,7 +663,7 @@ void actor_template_t::load_node(XNode const& node, RString const& dirname, cond
 	}
 }
 
-void actor_template_t::output_to_file(RageFile* file, RString const& indent)
+void actor_template_t::output_to_file(RageFile* file, std::string const& indent)
 {
 	if(!condition.empty())
 	{
@@ -676,7 +677,7 @@ void actor_template_t::output_to_file(RageFile* file, RString const& indent)
 	{
 		file->Write(indent + "Def." + type + "{\n");
 	}
-	RString subindent= indent + "  ";
+	std::string subindent= indent + "  ";
 	if(name.empty())
 	{
 		name= unique_name("actor");
@@ -685,7 +686,7 @@ void actor_template_t::output_to_file(RageFile* file, RString const& indent)
 	if(!frames.empty())
 	{
 		file->Write(subindent + "Frames= {\n");
-		RString frameindent= subindent + "  ";
+		std::string frameindent= subindent + "  ";
 		for(std::vector<frame_t>::iterator frame= frames.begin();
 			frame != frames.end(); ++frame)
 		{
@@ -697,7 +698,7 @@ void actor_template_t::output_to_file(RageFile* file, RString const& indent)
 	for(field_cont_t::iterator field= fields.begin();
 		field != fields.end(); ++field)
 	{
-		std::set<RString>::iterator is_string= fields_that_are_strings.find(field->first);
+		std::set<std::string>::iterator is_string= fields_that_are_strings.find(field->first);
 		if(is_string != fields_that_are_strings.end())
 		{
 			file->Write(subindent + field->first + "= \"" + field->second + "\",\n");
@@ -720,7 +721,7 @@ void actor_template_t::output_to_file(RageFile* file, RString const& indent)
 	}
 }
 
-void convert_xml_file(RString const& fname, RString const& dirname)
+void convert_xml_file(std::string const& fname, std::string const& dirname)
 {
 	if(arg_converters.empty())
 	{
@@ -737,7 +738,7 @@ void convert_xml_file(RString const& fname, RString const& dirname)
 	condition_set_t conditions;
 	plate.load_node(xml, dirname, conditions);
 	RageFile* file= new RageFile;
-	RString out_name= fname.Left(fname.size()-4) + ".lua";
+	std::string out_name= fname.substr(0, fname.size()-4) + ".lua";
 	if(!file->Open(out_name, RageFile::WRITE))
 	{
 		LOG->Trace("Could not open %s: %s", out_name.c_str(), file->GetError().c_str());
@@ -747,7 +748,7 @@ void convert_xml_file(RString const& fname, RString const& dirname)
 	for(condition_set_t::iterator cond= conditions.begin();
 		cond != conditions.end(); ++cond)
 	{
-		RString cond_text= cond->first;
+		std::string cond_text= cond->first;
 		convert_lua_chunk(cond_text);
 		file->Write("local " + cond->second + "_result= " + cond_text + "\n\n");
 	}
@@ -768,8 +769,8 @@ void convert_xml_file(RString const& fname, RString const& dirname)
 int LuaFunc_convert_xml_bgs(lua_State* L);
 int LuaFunc_convert_xml_bgs(lua_State* L)
 {
-	RString dir= SArg(1);
-	std::vector<RString> xml_list;
+	std::string dir= SArg(1);
+	std::vector<std::string> xml_list;
 	convert_xmls_in_dir(dir + "/");
 	return 0;
 }

@@ -7,7 +7,7 @@
 
 #include <cstdint>
 
-static void WriteBytes( RageFile &f, RString &sError, const void *buf, int size )
+static void WriteBytes( RageFile &f, std::string &sError, const void *buf, int size )
 {
 	if( sError.size() != 0 )
 		return;
@@ -17,13 +17,13 @@ static void WriteBytes( RageFile &f, RString &sError, const void *buf, int size 
 		sError = f.GetError();
 }
 
-static void write_le16( RageFile &f, RString &sError, std::uint16_t val )
+static void write_le16( RageFile &f, std::string &sError, std::uint16_t val )
 {
 	val = Swap16LE( val );
 	WriteBytes( f, sError, &val, sizeof(std::uint16_t) );
 }
 
-static void write_le32( RageFile &f, RString &sError, std::uint32_t val )
+static void write_le32( RageFile &f, std::string &sError, std::uint32_t val )
 {
 	val = Swap32LE( val );
 	WriteBytes( f, sError, &val, sizeof(std::uint32_t) );
@@ -37,7 +37,7 @@ bool RageSurfaceUtils::SaveBMP( RageSurface *surface, RageFile &f )
 		Swap24LE( 0xFF0000 ), Swap24LE( 0x00FF00 ), Swap24LE( 0x0000FF ), 0 );
 	RageSurfaceUtils::CopySurface( surface, converted_surface );
 
-	RString sError;
+	std::string sError;
 
 	int iFilePitch = converted_surface->pitch;
 	iFilePitch = (iFilePitch+3) & ~3; // round up a multiple of 4

@@ -16,7 +16,7 @@
 
 #include <set>
 
-static const RString g_sClassName = PRODUCT_ID;
+static const std::string g_sClassName = PRODUCT_ID;
 
 static HWND g_hWndMain;
 static HDC g_HDC;
@@ -33,7 +33,7 @@ static bool g_bRecreatingVideoMode = false;
 
 static UINT g_iQueryCancelAutoPlayMessage = 0;
 
-static RString GetNewWindow()
+static std::string GetNewWindow()
 {
 	HWND h = GetForegroundWindow();
 	if( h == nullptr )
@@ -42,7 +42,7 @@ static RString GetNewWindow()
 	DWORD iProcessID;
 	GetWindowThreadProcessId( h, &iProcessID );
 
-	RString sName;
+	std::string sName;
 	GetProcessFileName( iProcessID, sName );
 
 	sName = Basename(sName);
@@ -69,11 +69,11 @@ static LRESULT CALLBACK GraphicsWindow_WndProc( HWND hWnd, UINT msg, WPARAM wPar
 			LOG->Trace( "WM_ACTIVATE (%i, %i): %s", bInactive, bMinimized, g_bHasFocus? "has focus":"doesn't have focus" );
 			if( !g_bHasFocus )
 			{
-				RString sName = GetNewWindow();
-				static std::set<RString> sLostFocusTo;
+				std::string sName = GetNewWindow();
+				static std::set<std::string> sLostFocusTo;
 				sLostFocusTo.insert( sName );
-				RString sStr;
-				for( std::set<RString>::const_iterator it = sLostFocusTo.begin(); it != sLostFocusTo.end(); ++it )
+				std::string sStr;
+				for( std::set<std::string>::const_iterator it = sLostFocusTo.begin(); it != sLostFocusTo.end(); ++it )
 					sStr += (sStr.size()?", ":"") + *it;
 
 				LOG->MapLog( "LOST_FOCUS", "Lost focus to: %s", sStr.c_str() );
@@ -169,7 +169,7 @@ static LRESULT CALLBACK GraphicsWindow_WndProc( HWND hWnd, UINT msg, WPARAM wPar
 		case WM_COPYDATA:
 		{
 			PCOPYDATASTRUCT pMyCDS = (PCOPYDATASTRUCT) lParam;
-			RString sCommandLine( (char*)pMyCDS->lpData, pMyCDS->cbData );
+			std::string sCommandLine( (char*)pMyCDS->lpData, pMyCDS->cbData );
 			CommandLineActions::CommandLineArgs args;
 			split( sCommandLine, "|", args.argv, false );
 			CommandLineActions::ToProcess.push_back( args );
@@ -221,14 +221,14 @@ static void AdjustVideoModeParams( VideoModeParams &p )
 
 /* Set the display mode to the given size, bit depth and refresh.
  * The refresh setting may be ignored. */
-RString GraphicsWindow::SetScreenMode( const VideoModeParams &p )
+std::string GraphicsWindow::SetScreenMode( const VideoModeParams &p )
 {
 	if( p.windowed )
 	{
 		// We're going windowed. If we were previously fullscreen, reset.
 		ChangeDisplaySettings( nullptr, 0 );
 
-		return RString();
+		return std::string();
 	}
 
 	DEVMODE DevMode;
@@ -258,7 +258,7 @@ RString GraphicsWindow::SetScreenMode( const VideoModeParams &p )
 		return "Couldn't set screen mode";
 
 	g_FullScreenDevMode = DevMode;
-	return RString();
+	return std::string();
 }
 
 static int GetWindowStyle( bool bWindowed , bool bWindowIsFullscreenBorderless)
@@ -283,7 +283,7 @@ void GraphicsWindow::CreateGraphicsWindow( const VideoModeParams &p, bool bForce
 		int iWindowStyle = GetWindowStyle( p.windowed , p.bWindowIsFullscreenBorderless );
 
 		AppInstance inst;
-		HWND hWnd = CreateWindow( g_sClassName, "app", iWindowStyle,
+		HWND hWnd = CreateWindow( g_sClassName.c_str(), "app", iWindowStyle,
 						0, 0, 0, 0, nullptr, nullptr, inst, nullptr );
 		if( hWnd == nullptr )
 			RageException::Throw( "%s", werr_ssprintf( GetLastError(), "CreateWindow" ).c_str() );
@@ -315,7 +315,7 @@ void GraphicsWindow::CreateGraphicsWindow( const VideoModeParams &p, bool bForce
 				break;
 		}
 
-		SetWindowTextA( g_hWndMain, ConvertUTF8ToACP(p.sWindowTitle) );
+		SetWindowTextA( g_hWndMain, ConvertUTF8ToACP(p.sWindowTitle).c_str() );
 	} while(0);
 
 	// Update the window icon.
@@ -449,7 +449,7 @@ void GraphicsWindow::Initialize( bool bD3D )
 			LoadCursor( nullptr, IDC_ARROW ),	/* default cursor */
 			nullptr,			/* hbrBackground */
 			nullptr,			/* lpszMenuName */
-			g_sClassName	/* lpszClassName */
+			g_sClassName.c_str()	/* lpszClassName */
 		}; 
 
 		m_bWideWindowClass = false;
@@ -471,7 +471,7 @@ void GraphicsWindow::Shutdown()
 	ChangeDisplaySettings( nullptr, 0 );
 
 	AppInstance inst;
-	UnregisterClass( g_sClassName, inst );
+	UnregisterClass( g_sClassName.c_str(), inst );
 }
 
 HDC GraphicsWindow::GetHDC()
@@ -536,7 +536,11 @@ auto resetDeviceMode = [=]( DEVMODE& mode ) {
 	{
 		if ( deviceModeIsValid( devmode ) )
 		{
-			DisplayMode m = { devmode.dmPelsWidth, devmode.dmPelsHeight, static_cast<double> (devmode.dmDisplayFrequency) };
+			DisplayMode m = {
+				static_cast<unsigned int>(devmode.dmPelsWidth),
+				static_cast<unsigned int>(devmode.dmPelsHeight),
+				static_cast<double> (devmode.dmDisplayFrequency)
+			};
 			displayModes.insert( m );
 		}
 		resetDeviceMode( devmode );
@@ -559,7 +563,11 @@ auto resetDeviceMode = [=]( DEVMODE& mode ) {
 	// Get the current display mode
 	if ( EnumDisplaySettingsEx( nullptr, ENUM_CURRENT_SETTINGS, &devmode, 0 ) && deviceModeIsValid(devmode) )
 	{
-		DisplayMode m = { devmode.dmPelsWidth, devmode.dmPelsHeight, static_cast<double> (devmode.dmDisplayFrequency) };
+		DisplayMode m = {
+			static_cast<unsigned int>(devmode.dmPelsWidth),
+			static_cast<unsigned int>(devmode.dmPelsHeight),
+			static_cast<double> (devmode.dmDisplayFrequency)
+		};
 		RectI bounds = { 0, 0, static_cast<int> (m.width), static_cast<int> (m.height) };
 		out.insert( DisplaySpec( "", "Fullscreen", displayModes, m, bounds ) );
 	}

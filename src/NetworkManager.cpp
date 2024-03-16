@@ -27,7 +27,7 @@
 NetworkManager*	NETWORK = nullptr;	// global and accessible from anywhere in our program
 
 Preference<bool> NetworkManager::httpEnabled("HttpEnabled", true, nullptr, PreferenceType::Immutable);
-Preference<RString> NetworkManager::httpAllowHosts("HttpAllowHosts", "*.groovestats.com", nullptr, PreferenceType::Immutable);
+Preference<std::string> NetworkManager::httpAllowHosts("HttpAllowHosts", "*.groovestats.com", nullptr, PreferenceType::Immutable);
 
 static const char *HttpErrorCodeNames[] = {
 	"Blocked",
@@ -78,7 +78,7 @@ NetworkManager::NetworkManager() : httpClient(true), downloadClient(true)
 	RageFile f;
 	if(f.Open(SpecialFiles::CA_BUNDLE_PATH))
 	{
-		RString data;
+		std::string data;
 		f.Read(data);
 		f.Close();
 
@@ -111,7 +111,7 @@ bool NetworkManager::IsUrlAllowed(const std::string& url)
 	}
 
 	std::string protocol;
-	RString host;
+	std::string host;
 	std::string path;
 	std::string query;
 	int port;
@@ -128,12 +128,12 @@ bool NetworkManager::IsUrlAllowed(const std::string& url)
 		return false;
 	}
 
-	host.MakeLower();
+	StringUtil::MakeLower(host);
 
-	RString allowedHostsStr = this->httpAllowHosts.Get();
-	allowedHostsStr.MakeLower();
+	std::string allowedHostsStr = this->httpAllowHosts.Get();
+	StringUtil::MakeLower(allowedHostsStr);
 
-	std::vector<RString> allowedHosts;
+	std::vector<std::string> allowedHosts;
 	split(allowedHostsStr, ",", allowedHosts);
 
 	for (const auto& allowedHost : allowedHosts)
@@ -202,7 +202,7 @@ HttpRequestFuturePtr NetworkManager::HttpRequest(const HttpRequestArgs& args)
 	client.performRequest(req, [args, downloadFile, downloadFilename](const ix::HttpResponsePtr& response) {
 		if (!args.downloadFile.empty())
 		{
-			RString error = downloadFile->GetError();
+			std::string error = downloadFile->GetError();
 			downloadFile->Close();
 
 			if (!error.empty())
@@ -284,7 +284,7 @@ std::string NetworkManager::GetUserAgent()
 
 void NetworkManager::ClearDownloads()
 {
-	std::vector<RString> files;
+	std::vector<std::string> files;
 	FILEMAN->GetDirListing("/Downloads/*", files, false, true);
 
 	for (const auto& file : files)
@@ -861,7 +861,7 @@ private:
 		lua_pushfstring(L, "access to %s is not allowed", url.c_str());
 		lua_setfield(L, -2, "errorMessage");
 
-		RString error = "Lua error in HTTP response handler: ";
+		std::string error = "Lua error in HTTP response handler: ";
 		LuaHelpers::RunScriptOnStack(L, error, 1, 0, true);
 	}
 
@@ -878,7 +878,7 @@ private:
 		lua_pushstring(L, errorMessage.c_str());
 		lua_setfield(L, -2, "errorMessage");
 
-		RString error = "Lua error in HTTP response handler: ";
+		std::string error = "Lua error in HTTP response handler: ";
 		LuaHelpers::RunScriptOnStack(L, error, 1, 0, true);
 	}
 
@@ -941,7 +941,7 @@ private:
 		lua_pushnumber(L, response->downloadSize);
 		lua_setfield(L, -2, "downloadSize");
 
-		RString error = "Lua error in HTTP response handler: ";
+		std::string error = "Lua error in HTTP response handler: ";
 		LuaHelpers::RunScriptOnStack(L, error, 1, 0, true);
 	}
 
@@ -951,7 +951,7 @@ private:
 		lua_pushinteger(L, current);
 		lua_pushinteger(L, total);
 
-		RString error = "Lua error in HTTP progress handler: ";
+		std::string error = "Lua error in HTTP progress handler: ";
 		LuaHelpers::RunScriptOnStack(L, error, 2, 0, true);
 	}
 
@@ -968,7 +968,7 @@ private:
 		lua_pushfstring(L, "access to %s is not allowed", url.c_str());
 		lua_setfield(L, -2, "reason");
 
-		RString error = "Lua error in WebSocket message handler: ";
+		std::string error = "Lua error in WebSocket message handler: ";
 		LuaHelpers::RunScriptOnStack(L, error, 1, 0, true);
 	}
 
@@ -1052,7 +1052,7 @@ private:
 				return;
 		}
 
-		RString error = "Lua error in WebSocket message handler: ";
+		std::string error = "Lua error in WebSocket message handler: ";
 		LuaHelpers::RunScriptOnStack(L, error, 1, 0, true);
 	}
 

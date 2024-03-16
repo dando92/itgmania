@@ -73,7 +73,7 @@
 
 static ThemeMetric<float> INITIAL_BACKGROUND_BRIGHTNESS	("ScreenGameplay","InitialBackgroundBrightness");
 static ThemeMetric<float> SECONDS_BETWEEN_COMMENTS	("ScreenGameplay","SecondsBetweenComments");
-static ThemeMetric<RString> SCORE_KEEPER_CLASS		("ScreenGameplay","ScoreKeeperClass");
+static ThemeMetric<std::string> SCORE_KEEPER_CLASS		("ScreenGameplay","ScoreKeeperClass");
 static ThemeMetric<bool> FORCE_IMMEDIATE_FAIL_FOR_BATTERY("ScreenGameplay", "ForceImmediateFailForBattery");
 
 AutoScreenMessage( SM_PlayGo );
@@ -548,10 +548,10 @@ void ScreenGameplay::Init()
 			++next_player_slot;
 		}
 		Enum::Push(L, GAMESTATE->GetCurrentStyle(PLAYER_INVALID)->m_StyleType);
-		RString err= "Error running MarginFunction:  ";
+		std::string err= "Error running MarginFunction:  ";
 		if(LuaHelpers::RunScriptOnStack(L, err, 2, 3, true))
 		{
-			RString marge= "Margin value must be a number.";
+			std::string marge= "Margin value must be a number.";
 			margins[PLAYER_1][0]= SafeFArg(L, -3, marge, 40);
 			float center= SafeFArg(L, -2, marge, 80);
 			margins[PLAYER_1][1]= center / 2.0f;
@@ -565,7 +565,7 @@ void ScreenGameplay::Init()
 	float left_edge[NUM_PLAYERS]= {0.0f, SCREEN_WIDTH / 2.0f};
 	FOREACH_EnabledPlayerInfo( m_vPlayerInfo, pi )
 	{
-		RString sName = ssprintf("Player%s", pi->GetName().c_str());
+		std::string sName = ssprintf("Player%s", pi->GetName().c_str());
 		pi->m_pPlayer->SetName( sName );
 
 		Style const* style= GAMESTATE->GetCurrentStyle(pi->m_pn);
@@ -827,7 +827,7 @@ void ScreenGameplay::Init()
 
 	FOREACH_EnabledPlayerInfo( m_vPlayerInfo, pi )
 	{
-		RString sType = PLAYER_TYPE;
+		std::string sType = PLAYER_TYPE;
 		if( pi->m_bIsDummy )
 			sType += "Dummy";
 		pi->m_pPlayer->Init(
@@ -1091,7 +1091,7 @@ void ScreenGameplay::SetupSong( int iSongIndex )
 		}
 
 		{
-			RString sType;
+			std::string sType;
 			switch( GAMESTATE->m_SongOptions.GetCurrent().m_SoundEffectType )
 			{
 				case SoundEffectType_Off:	sType = "SoundEffectControl_Off";	break;
@@ -1140,7 +1140,7 @@ void ScreenGameplay::LoadNextSong()
 	{
 		pi->GetPlayerStageStats()->m_iSongsPlayed++;
 		if( pi->m_ptextCourseSongNumber )
-			pi->m_ptextCourseSongNumber->SetText( ssprintf(SONG_NUMBER_FORMAT.GetValue(), pi->GetPlayerStageStats()->m_iSongsPassed+1) );
+			pi->m_ptextCourseSongNumber->SetText( ssprintf(SONG_NUMBER_FORMAT.GetValue().c_str(), pi->GetPlayerStageStats()->m_iSongsPassed+1) );
 	}
 
 	if( GAMESTATE->m_bMultiplayer )
@@ -1380,8 +1380,8 @@ void ScreenGameplay::LoadLights()
 	}
 
 	// No explicit lights.  Create autogen lights.
-	RString sDifficulty = PREFSMAN->m_sLightsStepsDifficulty;
-	std::vector<RString> asDifficulties;
+	std::string sDifficulty = PREFSMAN->m_sLightsStepsDifficulty;
+	std::vector<std::string> asDifficulties;
 	split( sDifficulty, ",", asDifficulties );
 
 	// Always use the steps from the primary steps type so that lights are consistent over single and double styles.
@@ -1390,7 +1390,7 @@ void ScreenGameplay::LoadLights()
 	Difficulty d1 = Difficulty_Invalid;
 	if( asDifficulties.size() > 0 )
 	{
-		if( asDifficulties[0].CompareNoCase("selected") == 0 )
+		if( StringUtil::EqualsNoCase(asDifficulties[0], "selected") )
 		{
 			// Base lights off current difficulty of active player
 			// Can be either P1 or P2 if they're individual or P1 if both are active
@@ -1540,7 +1540,7 @@ void ScreenGameplay::PlayTicks()
 }
 
 /* Play announcer "type" if it's been at least fSeconds since the last announcer. */
-void ScreenGameplay::PlayAnnouncer( const RString &type, float fSeconds, float *fDeltaSeconds )
+void ScreenGameplay::PlayAnnouncer( const std::string &type, float fSeconds, float *fDeltaSeconds )
 {
 	if( GAMESTATE->m_fOpponentHealthPercent == 0 )
 		return; // Shut the announcer up
@@ -2285,7 +2285,7 @@ void ScreenGameplay::SendCrossedMessages()
 						FOREACH_EnabledPlayerNumberInfo(m_vPlayerInfo, pi)
 						{
 							const Style *pStyle = GAMESTATE->GetCurrentStyle(pi->m_pn);
-							RString sButton = pStyle->ColToButtonName( t );
+							std::string sButton = pStyle->ColToButtonName( t );
 							Message msg( i == 0 ? "NoteCrossed" : "NoteWillCross" );
 							msg.SetParam( "ButtonName", sButton );
 							msg.SetParam( "NumMessagesFromCrossed", i );
@@ -2296,7 +2296,7 @@ void ScreenGameplay::SendCrossedMessages()
 					else
 					{
 						const Style *pStyle = GAMESTATE->GetCurrentStyle(PLAYER_INVALID);
-						RString sButton = pStyle->ColToButtonName( t );
+						std::string sButton = pStyle->ColToButtonName( t );
 						Message msg( i == 0 ? "NoteCrossed" : "NoteWillCross" );
 						msg.SetParam( "ButtonName", sButton );
 						msg.SetParam( "NumMessagesFromCrossed", i );
@@ -2308,7 +2308,7 @@ void ScreenGameplay::SendCrossedMessages()
 					MESSAGEMAN->Broadcast( (MessageID)(Message_NoteCrossed + i) );
 				if( i == 0  &&  iNumTracksWithTapOrHoldHead >= 2 )
 				{
-					RString sMessageName = "NoteCrossedJump";
+					std::string sMessageName = "NoteCrossedJump";
 					MESSAGEMAN->Broadcast( sMessageName );
 				}
 			}
@@ -2929,7 +2929,7 @@ void ScreenGameplay::HandleScreenMessage( const ScreenMessage SM )
 	else if( ScreenMessageHelpers::ScreenMessageToString(SM).find("0Combo") != std::string::npos )
 	{
 		int iCombo;
-		RString sCropped = ScreenMessageHelpers::ScreenMessageToString(SM).substr(3);
+		std::string sCropped = ScreenMessageHelpers::ScreenMessageToString(SM).substr(3);
 		sscanf(sCropped.c_str(),"%d%*s",&iCombo);
 		PlayAnnouncer( ssprintf("gameplay %d combo",iCombo), 2 );
 	}
@@ -2943,7 +2943,7 @@ void ScreenGameplay::HandleScreenMessage( const ScreenMessage SM )
 	}
 	else if( SM >= SM_BattleTrickLevel1 && SM <= SM_BattleTrickLevel3 )
 	{
-		int iTrickLevel = SM-SM_BattleTrickLevel1+1;
+		int iTrickLevel = SM.c_str() - SM_BattleTrickLevel1.c_str() + 1;
 		PlayAnnouncer( ssprintf("gameplay battle trick level%d",iTrickLevel), 3 );
 		if( SM == SM_BattleTrickLevel1 ) m_soundBattleTrickLevel1.Play(false);
 		else if( SM == SM_BattleTrickLevel2 ) m_soundBattleTrickLevel2.Play(false);
@@ -2951,7 +2951,7 @@ void ScreenGameplay::HandleScreenMessage( const ScreenMessage SM )
 	}
 	else if( SM >= SM_BattleDamageLevel1 && SM <= SM_BattleDamageLevel3 )
 	{
-		int iDamageLevel = SM-SM_BattleDamageLevel1+1;
+		int iDamageLevel = SM.c_str() - SM_BattleDamageLevel1.c_str() + 1;
 		PlayAnnouncer( ssprintf("gameplay battle damage level%d",iDamageLevel), 3 );
 	}
 	else if( SM == SM_DoPrevScreen )
@@ -3152,7 +3152,7 @@ void ScreenGameplay::SaveReplay()
 			p->AppendChild( pi->m_pPlayer->GetNoteData().CreateNode() );
 
 			// Find a file name for the replay
-			std::vector<RString> files;
+			std::vector<std::string> files;
 			GetDirListing( "Save/Replays/replay*", files, false, false );
 			sort( files.begin(), files.end() );
 
@@ -3162,7 +3162,7 @@ void ScreenGameplay::SaveReplay()
 			for( int i = files.size()-1; i >= 0; --i )
 			{
 				static Regex re( "^replay([0-9]{5})\\....$" );
-				std::vector<RString> matches;
+				std::vector<std::string> matches;
 				if( !re.Compare( files[i], matches ) )
 					continue;
 
@@ -3171,7 +3171,7 @@ void ScreenGameplay::SaveReplay()
 				break;
 			}
 
-			RString sFileName = ssprintf( "replay%05d.xml", iIndex );
+			std::string sFileName = ssprintf( "replay%05d.xml", iIndex );
 
 			XmlFileUtil::SaveToFile( p, "Save/Replays/"+sFileName );
 			SAFE_DELETE( p );

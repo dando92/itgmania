@@ -48,7 +48,7 @@ struct USBInit
 static struct USBInit g_USBInit;
 
 //Adds new preference to allow for different light wiring setups
-static Preference<RString> g_sPacDriveLightOrdering("PacDriveLightOrdering", "openitg");
+static Preference<std::string> g_sPacDriveLightOrdering("PacDriveLightOrdering", "openitg");
 int iLightingOrder = 0;
 
 LightsDriver_LinuxPacDrive::LightsDriver_LinuxPacDrive()
@@ -62,8 +62,8 @@ LightsDriver_LinuxPacDrive::LightsDriver_LinuxPacDrive()
 	// clear all lights
 	WriteDevice( 0 );
 
-	RString lightOrder = g_sPacDriveLightOrdering.Get();
-	if (lightOrder.CompareNoCase("lumenar") == 0 || lightOrder.CompareNoCase("openitg") == 0) {
+	std::string lightOrder = g_sPacDriveLightOrdering.Get();
+	if (StringUtil::EqualsNoCase(lightOrder, "lumenar") || StringUtil::EqualsNoCase(lightOrder, "openitg")) {
 		iLightingOrder = 1;
 	}
 }

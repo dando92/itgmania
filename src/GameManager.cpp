@@ -13,6 +13,7 @@
 #include "LightsManager.h"	// for NUM_CabinetLight
 #include "Game.h"
 #include "Style.h"
+#include "StringUtil.h"
 
 #include <cstddef>
 #include <vector>
@@ -41,7 +42,7 @@ enum
 	// 16 tracks needed for beat-double7 and techno-double8
 };
 
-RString StepsTypeInfo::GetLocalizedString() const
+std::string StepsTypeInfo::GetLocalizedString() const
 {
 	if( THEME->HasString( "StepsType", szName ) )
 		return THEME->GetString( "StepsType", szName );
@@ -3449,9 +3450,9 @@ const StepsTypeInfo &GameManager::GetStepsTypeInfo( StepsType st )
 	return g_StepsTypeInfos[st];
 }
 
-StepsType GameManager::StringToStepsType( RString sStepsType )
+StepsType GameManager::StringToStepsType( std::string sStepsType )
 {
-	sStepsType.MakeLower();
+	StringUtil::MakeLower(sStepsType);
 
 	for( int i=0; i<NUM_StepsType; i++ )
 		if( g_StepsTypeInfos[i].szName == sStepsType )
@@ -3460,9 +3461,9 @@ StepsType GameManager::StringToStepsType( RString sStepsType )
 	return StepsType_Invalid;
 }
 
-RString GameManager::StyleToLocalizedString( const Style* style )
+std::string GameManager::StyleToLocalizedString( const Style* style )
 {
-	RString s = style->m_szName;
+	std::string s = style->m_szName;
 	s = Capitalize( s );
 	if( THEME->HasString( "Style", s ) )
 		return THEME->GetString( "Style", s );
@@ -3470,22 +3471,22 @@ RString GameManager::StyleToLocalizedString( const Style* style )
 		return s;
 }
 
-const Game* GameManager::StringToGame( RString sGame )
+const Game* GameManager::StringToGame( std::string sGame )
 {
 	for( std::size_t i=0; i<ARRAYLEN(g_Games); ++i )
-		if( !sGame.CompareNoCase(g_Games[i]->m_szName) )
+		if( StringUtil::EqualsNoCase(sGame, g_Games[i]->m_szName) )
 			return g_Games[i];
 
 	return nullptr;
 }
 
 
-const Style* GameManager::GameAndStringToStyle( const Game *game, RString sStyle )
+const Style* GameManager::GameAndStringToStyle( const Game *game, std::string sStyle )
 {
 	for( int s=0; game->m_apStyles[s]; ++s )
 	{
 		const Style* style = game->m_apStyles[s];
-		if( sStyle.CompareNoCase(style->m_szName) == 0 )
+		if( StringUtil::EqualsNoCase(sStyle, style->m_szName) )
 			return style;
 	}
 
@@ -3499,7 +3500,7 @@ const Style* GameManager::GameAndStringToStyle( const Game *game, RString sStyle
 class LunaGameManager: public Luna<GameManager>
 {
 public:
-	static int StepsTypeToLocalizedString( T* p, lua_State *L )	{ lua_pushstring(L, p->GetStepsTypeInfo(Enum::Check<StepsType>(L, 1)).GetLocalizedString() ); return 1; }
+	static int StepsTypeToLocalizedString( T* p, lua_State *L )	{ lua_pushstring(L, p->GetStepsTypeInfo(Enum::Check<StepsType>(L, 1)).GetLocalizedString().c_str() ); return 1; }
 	static int GetFirstStepsTypeForGame( T* p, lua_State *L )
 	{
 		Game *pGame = Luna<Game>::check( L, 1 );
@@ -3523,7 +3524,7 @@ public:
 	}
 	static int GetStylesForGame( T* p, lua_State *L )
 	{
-		RString game_name= SArg(1);
+		std::string game_name= SArg(1);
 		const Game *pGame = p->StringToGame(game_name);
 		if(!pGame)
 		{
@@ -3554,13 +3555,13 @@ public:
 
 	static int SetGame( T* p, lua_State *L )
 	{
-		RString game_name= SArg(1);
+		std::string game_name= SArg(1);
 		const Game *pGame = p->StringToGame(game_name);
 		if(!pGame)
 		{
 			luaL_error(L, "SetGame: Invalid Game: '%s'", game_name.c_str());
 		}
-		RString theme;
+		std::string theme;
 		if( lua_gettop(L) >= 2 && !lua_isnil(L, 2) )
 		{
 			theme = SArg(2);

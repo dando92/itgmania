@@ -83,7 +83,7 @@ void ScreenStatsOverlay::Update( float fDeltaTime )
 	}
 }
 
-void ScreenStatsOverlay::AddTimestampLine( const RString &txt, const RageColor &color )
+void ScreenStatsOverlay::AddTimestampLine( const std::string &txt, const RageColor &color )
 {
 	m_textSkips[m_LastSkip].SetText( txt );
 	m_textSkips[m_LastSkip].StopTweening();
@@ -125,7 +125,7 @@ void ScreenStatsOverlay::UpdateSkips()
 
 	if( skip )
 	{
-		RString sTime( SecondsToMMSSMsMs(RageTimer::GetTimeSinceStartFast()) );
+		std::string sTime( SecondsToMMSSMsMs(RageTimer::GetTimeSinceStartFast()) );
 
 		static const RageColor colors[] =
 		{

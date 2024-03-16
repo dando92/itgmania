@@ -30,7 +30,7 @@ static void GetMemoryDebugInfo()
 
 static void GetDisplayDriverDebugInfo()
 {
-	RString sPrimaryDeviceName = GetPrimaryVideoName();
+	std::string sPrimaryDeviceName = GetPrimaryVideoName();
 
 	if( sPrimaryDeviceName == "" )
 		LOG->Info( "Primary display driver could not be determined." );
@@ -70,14 +70,14 @@ static void GetDisplayDriverDebugInfo()
 	}
 }
 
-static RString wo_ssprintf( MMRESULT err, const char *fmt, ...)
+static std::string wo_ssprintf( MMRESULT err, const char *fmt, ...)
 {
 	char buf[MAXERRORLENGTH];
 	waveOutGetErrorText(err, buf, MAXERRORLENGTH);
 
 	va_list	va;
 	va_start(va, fmt);
-	RString s = vssprintf( fmt, va );
+	std::string s = vssprintf( fmt, va );
 	va_end(va);
 
 	return s += ssprintf( "(%s)", buf );
@@ -96,7 +96,7 @@ static void GetDriveDebugInfo()
 	 *		     Identifier  "WDC WD1200JB-75CRA0"
 	 *			 Type        "DiskPeripheral"
 	 */
-	std::vector<RString> Ports;
+	std::vector<std::string> Ports;
 	if( !RegistryAccess::GetRegSubKeys( "HKEY_LOCAL_MACHINE\\HARDWARE\\DEVICEMAP\\Scsi", Ports ) )
 		return;
 
@@ -105,28 +105,28 @@ static void GetDriveDebugInfo()
 		int DMAEnabled = -1;
 		RegistryAccess::GetRegValue( Ports[i], "DMAEnabled", DMAEnabled );
 
-		RString Driver;
+		std::string Driver;
 		RegistryAccess::GetRegValue( Ports[i], "Driver", Driver );
 
-		std::vector<RString> Busses;
+		std::vector<std::string> Busses;
 		if( !RegistryAccess::GetRegSubKeys( Ports[i], Busses, "Scsi Bus .*" ) )
 			continue;
 
 		for( unsigned bus = 0; bus < Busses.size(); ++bus )
 		{
-			std::vector<RString> TargetIDs;
+			std::vector<std::string> TargetIDs;
 			if( !RegistryAccess::GetRegSubKeys( Busses[bus], TargetIDs, "Target Id .*" ) )
 				continue;
 
 			for( unsigned tid = 0; tid < TargetIDs.size(); ++tid )
 			{
-				std::vector<RString> LUIDs;
+				std::vector<std::string> LUIDs;
 				if( !RegistryAccess::GetRegSubKeys( TargetIDs[tid], LUIDs, "Logical Unit Id .*" ) )
 					continue;
 
 				for( unsigned luid = 0; luid < LUIDs.size(); ++luid )
 				{
-					RString Identifier;
+					std::string Identifier;
 					RegistryAccess::GetRegValue( LUIDs[luid], "Identifier", Identifier );
 					TrimRight( Identifier );
 					LOG->Info( "Drive: \"%s\" Driver: %s DMA: %s",
@@ -151,7 +151,7 @@ static void GetWindowsVersionDebugInfo()
 		return;
 	}
 
-	RString Ver = ssprintf("Windows %i.%i (", ovi.dwMajorVersion, ovi.dwMinorVersion);
+	std::string Ver = ssprintf("Windows %i.%i (", ovi.dwMajorVersion, ovi.dwMinorVersion);
 	if(ovi.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS)
 	{
 		if(ovi.dwMinorVersion == 0)
@@ -232,7 +232,7 @@ static void GetSoundDriverDebugInfo()
 		MMRESULT ret = waveOutGetDevCaps(i, &caps, sizeof(caps));
 		if(ret != MMSYSERR_NOERROR)
 		{
-			LOG->Info(wo_ssprintf(ret, "waveOutGetDevCaps(%i) failed", i));
+			LOG->Info(wo_ssprintf(ret, "waveOutGetDevCaps(%i) failed", i).c_str());
 			continue;
 		}
 		LOG->Info("Sound device %i: %s, %i.%i, MID %i, PID %i %s", i, caps.szPname,

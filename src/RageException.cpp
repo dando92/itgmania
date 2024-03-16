@@ -16,8 +16,8 @@ using CrashHandler::DebugBreak;
 #endif
 
 static std::uint64_t g_HandlerThreadID = RageThread::GetInvalidThreadID();
-static void (*g_CleanupHandler)( const RString &sError ) = nullptr;
-void RageException::SetCleanupHandler( void (*pHandler)(const RString &sError) )
+static void (*g_CleanupHandler)( const std::string &sError ) = nullptr;
+void RageException::SetCleanupHandler( void (*pHandler)(const std::string &sError) )
 {
 	g_HandlerThreadID = RageThread::GetCurrentThreadID();
 	g_CleanupHandler = pHandler;
@@ -29,10 +29,10 @@ void RageException::Throw( const char *sFmt, ... )
 {
 	va_list	va;
 	va_start( va, sFmt );
-	RString error = vssprintf( sFmt, va );
+	const std::string error = vssprintf( sFmt, va );
 	va_end( va );
 
-	RString msg = ssprintf(
+	const std::string msg = ssprintf(
 		"\n"
 		"//////////////////////////////////////////////////////\n"
 		"Exception: %s\n"
@@ -45,7 +45,7 @@ void RageException::Throw( const char *sFmt, ... )
 	}
 	else
 	{
-		puts( msg );
+		puts( msg.c_str() );
 		fflush( stdout );
 	}
 
@@ -55,7 +55,7 @@ void RageException::Throw( const char *sFmt, ... )
 #endif
 
 	ASSERT_M( g_HandlerThreadID == RageThread::GetInvalidThreadID() || g_HandlerThreadID == RageThread::GetCurrentThreadID(),
-		  ssprintf("RageException::Throw() on another thread: %s", error.c_str()) );
+		  ssprintf("RageException::Throw() on another thread: %s", error.c_str()).c_str() );
 	if( g_CleanupHandler != nullptr )
 		g_CleanupHandler( error );
 

@@ -53,7 +53,7 @@ void Style::GetTransformedNoteDataForStyle( PlayerNumber pn, const NoteData& ori
 void Style::StyleInputToGameInput( int iCol, PlayerNumber pn, std::vector<GameInput>& ret ) const
 {
 	ASSERT_M( pn < NUM_PLAYERS  &&  iCol < MAX_COLS_PER_PLAYER,
-		ssprintf("P%i C%i", pn, iCol) );
+		ssprintf("P%i C%i", pn, iCol).c_str() );
 	bool bUsingOneSide = m_StyleType != StyleType_OnePlayerTwoSides && m_StyleType != StyleType_TwoPlayersSharedSides;
 
 	FOREACH_ENUM( GameController, gc)
@@ -127,7 +127,7 @@ float Style::GetWidth(PlayerNumber pn) const
 	return width + (width / static_cast<float>(m_iColsPerPlayer-1));
 }
 
-RString Style::ColToButtonName( int iCol ) const
+std::string Style::ColToButtonName( int iCol ) const
 {
 	const char *pzColumnName = m_ColumnInfo[PLAYER_1][iCol].pzName;
 	if( pzColumnName != nullptr )
@@ -145,7 +145,7 @@ RString Style::ColToButtonName( int iCol ) const
 class LunaStyle: public Luna<Style>
 {
 public:
-	static int GetName( T* p, lua_State *L )		{ LuaHelpers::Push( L, (RString) p->m_szName ); return 1; }
+	static int GetName( T* p, lua_State *L )		{ LuaHelpers::Push( L, (std::string) p->m_szName ); return 1; }
 	DEFINE_METHOD( GetStyleType,		m_StyleType )
 	DEFINE_METHOD( GetStepsType,		m_StepsType )
 	DEFINE_METHOD( ColumnsPerPlayer,	m_iColsPerPlayer )
@@ -180,7 +180,7 @@ public:
 		ret.Set( L, "Track" );
 		lua_pushnumber( L, p->m_ColumnInfo[pn][iCol].fXOffset );
 		ret.Set( L,  "XOffset" );
-		lua_pushstring( L, p->ColToButtonName(iCol) );
+		lua_pushstring( L, p->ColToButtonName(iCol).c_str() );
 		ret.Set( L, "Name" );
 
 		ret.PushSelf(L);

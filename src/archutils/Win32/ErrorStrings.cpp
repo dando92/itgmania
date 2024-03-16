@@ -4,7 +4,9 @@
 
 #include <windows.h>
 
-RString werr_ssprintf( int err, const char *fmt, ... )
+#include "StringUtil.h"
+
+std::string werr_ssprintf( int err, const char *fmt, ... )
 {
 	char buf[1024] = "";
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
@@ -12,49 +14,49 @@ RString werr_ssprintf( int err, const char *fmt, ... )
 
 	// Why is FormatMessage returning text ending with \r\n? (who? -aj)
 	// Perhaps it's because you're on Windows, where newlines are \r\n. -aj
-	RString text = buf;
-	text.Replace( "\n", "" );
-	text.Replace( "\r", " " ); // foo\r\nbar -> foo bar
+	std::string text = buf;
+	StringUtil::Replace(text, "\n", "");
+	StringUtil::Replace(text, "\r", " "); // foo\r\nbar -> foo bar
 	TrimRight( text ); // "foo\r\n" -> "foo"
 
 	va_list	va;
 	va_start(va, fmt);
-	RString s = vssprintf( fmt, va );
+	std::string s = vssprintf( fmt, va );
 	va_end(va);
 
 	return s += ssprintf( " (%s)", text.c_str() );
 }
 
-RString ConvertWstringToCodepage( std::wstring s, int iCodePage )
+std::string ConvertWstringToCodepage( std::wstring s, int iCodePage )
 {
 	if( s.empty() )
-		return RString();
+		return std::string();
 
 	int iBytes = WideCharToMultiByte( iCodePage, 0, s.data(), s.size(), 
 					nullptr, 0, nullptr, FALSE );
-	ASSERT_M( iBytes > 0, werr_ssprintf( GetLastError(), "WideCharToMultiByte" ).c_str() );
+	ASSERT_M( iBytes > 0, werr_ssprintf( GetLastError(), "WideCharToMultiByte" ) );
 
 	char * buf = new char[iBytes + 1];
 	std::fill(buf, buf + iBytes + 1, '\0');
 	WideCharToMultiByte( CP_ACP, 0, s.data(), s.size(), 
 					buf, iBytes, nullptr, FALSE );
-	RString ret( buf );
+	std::string ret( buf );
 	delete[] buf;
 	return ret;
 }
 
-RString ConvertUTF8ToACP( const RString &s )
+std::string ConvertUTF8ToACP( const std::string &s )
 {
 	return ConvertWstringToCodepage( RStringToWstring(s), CP_ACP );
 }
 
-std::wstring ConvertCodepageToWString( RString s, int iCodePage )
+std::wstring ConvertCodepageToWString( std::string s, int iCodePage )
 {
 	if( s.empty() )
 		return std::wstring();
 
 	int iBytes = MultiByteToWideChar( iCodePage, 0, s.data(), s.size(), nullptr, 0 );
-	ASSERT_M( iBytes > 0, werr_ssprintf( GetLastError(), "MultiByteToWideChar" ).c_str() );
+	ASSERT_M( iBytes > 0, werr_ssprintf( GetLastError(), "MultiByteToWideChar" ) );
 
 	wchar_t *pTemp = new wchar_t[iBytes];
 	MultiByteToWideChar( iCodePage, 0, s.data(), s.size(), pTemp, iBytes );
@@ -64,7 +66,7 @@ std::wstring ConvertCodepageToWString( RString s, int iCodePage )
 	return sRet;
 }
 
-RString ConvertACPToUTF8( const RString &s )
+std::string ConvertACPToUTF8( const std::string &s )
 {
 	return WStringToRString( ConvertCodepageToWString(s, CP_ACP) );
 }

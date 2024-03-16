@@ -13,6 +13,7 @@
 #include "LocalizedString.h"
 #include "RageUtil.h"
 #include "arch/Dialog/Dialog.h"
+#include "StringUtil.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -64,15 +65,15 @@ BOOL ChangeGameSettings::OnInitDialog()
 	IniFile ini;
 	ini.ReadFile( SpecialFiles::PREFERENCES_INI_PATH );
 
-	RString sValue;
+	std::string sValue;
 
 
 	// video renderers
 	sValue = "";
 	ini.GetValue( "Options", "VideoRenderers", sValue );
-	if( sValue.CompareNoCase("opengl")==0 )
+	if( StringUtil::EqualsNoCase(sValue, "opengl") )
 		CheckDlgButton( IDC_RADIO_OPENGL, BST_CHECKED );
-	else if( sValue.CompareNoCase("d3d")==0 )
+	else if( StringUtil::EqualsNoCase(sValue, "d3d") )
 		CheckDlgButton( IDC_RADIO_DIRECT3D, BST_CHECKED );
 	else
 		CheckDlgButton( IDC_RADIO_DEFAULT, BST_CHECKED );
@@ -81,13 +82,13 @@ BOOL ChangeGameSettings::OnInitDialog()
 	// sound drivers
 	sValue = "";
 	ini.GetValue( "Options", "SoundDrivers", sValue );
-	if( sValue.CompareNoCase("DirectSound")==0 )
+	if( StringUtil::EqualsNoCase( sValue, "DirectSound") )
 		CheckDlgButton( IDC_RADIO_SOUND_DIRECTSOUND_HARDWARE, BST_CHECKED );
-	else if( sValue.CompareNoCase("DirectSound-sw")==0 )
+	else if( StringUtil::EqualsNoCase(sValue, "DirectSound-sw") )
 		CheckDlgButton( IDC_RADIO_SOUND_DIRECTSOUND_SOFTWARE, BST_CHECKED );
-	else if( sValue.CompareNoCase("WaveOut")==0 )
+	else if( StringUtil::EqualsNoCase(sValue, "WaveOut") )
 		CheckDlgButton( IDC_RADIO_SOUND_WAVEOUT, BST_CHECKED );
-	else if( sValue.CompareNoCase("null")==0 )
+	else if( StringUtil::EqualsNoCase(sValue, "null") )
 		CheckDlgButton( IDC_RADIO_SOUND_NULL, BST_CHECKED );
 	else
 		CheckDlgButton( IDC_RADIO_SOUND_DEFAULT, BST_CHECKED );
@@ -120,23 +121,23 @@ void ChangeGameSettings::OnOK()
 	ini.ReadFile( SpecialFiles::PREFERENCES_INI_PATH );
 
 	if( BST_CHECKED == IsDlgButtonChecked(IDC_RADIO_OPENGL) )
-		ini.SetValue( "Options", "VideoRenderers", (RString)"opengl" );
+		ini.SetValue( "Options", "VideoRenderers", (std::string)"opengl" );
 	else if( BST_CHECKED == IsDlgButtonChecked(IDC_RADIO_DIRECT3D) )
-		ini.SetValue( "Options", "VideoRenderers", (RString)"d3d" );
+		ini.SetValue( "Options", "VideoRenderers", (std::string)"d3d" );
 	else
-		ini.SetValue( "Options", "VideoRenderers", RString() );
+		ini.SetValue( "Options", "VideoRenderers", std::string() );
 
 
 	if( BST_CHECKED == IsDlgButtonChecked(IDC_RADIO_SOUND_DIRECTSOUND_HARDWARE) )
-		ini.SetValue( "Options", "SoundDrivers", (RString)"DirectSound" );
+		ini.SetValue( "Options", "SoundDrivers", (std::string)"DirectSound" );
 	else if( BST_CHECKED == IsDlgButtonChecked(IDC_RADIO_SOUND_DIRECTSOUND_SOFTWARE) )
-		ini.SetValue( "Options", "SoundDrivers", (RString)"DirectSound-sw" );
+		ini.SetValue( "Options", "SoundDrivers", (std::string)"DirectSound-sw" );
 	else if( BST_CHECKED == IsDlgButtonChecked(IDC_RADIO_SOUND_WAVEOUT) )
-		ini.SetValue( "Options", "SoundDrivers", (RString)"WaveOut" );
+		ini.SetValue( "Options", "SoundDrivers", (std::string)"WaveOut" );
 	else if( BST_CHECKED == IsDlgButtonChecked(IDC_RADIO_SOUND_NULL) )
-		ini.SetValue( "Options", "SoundDrivers", (RString)"null" );
+		ini.SetValue( "Options", "SoundDrivers", (std::string)"null" );
 	else
-		ini.SetValue( "Options", "SoundDrivers", RString() );
+		ini.SetValue( "Options", "SoundDrivers", std::string() );
 
 
 	if( BST_CHECKED == IsDlgButtonChecked(IDC_CHECK_FORCE_60HZ) )
@@ -156,7 +157,7 @@ void ChangeGameSettings::OnOK()
 
 	if( !ini.WriteFile(SpecialFiles::PREFERENCES_INI_PATH) )
 	{
-		RString sError = ssprintf( ERROR_WRITING_FILE.GetValue(), SpecialFiles::PREFERENCES_INI_PATH.c_str(), ini.GetError().c_str() );
+		std::string sError = ssprintf( ERROR_WRITING_FILE.GetValue(), SpecialFiles::PREFERENCES_INI_PATH.c_str(), ini.GetError().c_str() );
 		Dialog::OK( sError );
 	}
 

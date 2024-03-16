@@ -111,10 +111,10 @@ bool ArchHooks_Win32::CheckForMultipleInstances(int argc, char* argv[])
 			SetForegroundWindow( hWnd );
 
 		// Send the command line to the existing window.
-		std::vector<RString> vsArgs;
+		std::vector<std::string> vsArgs;
 		for( int i=0; i<argc; i++ )
 			vsArgs.push_back( argv[i] );
-		RString sAllArgs = join("|", vsArgs);
+		std::string sAllArgs = join("|", vsArgs);
 		COPYDATASTRUCT cds;
 		cds.dwData = 0;
 		cds.cbData = sAllArgs.size();
@@ -177,7 +177,7 @@ void ArchHooks_Win32::SetupConcurrentRenderingThread()
 	SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL );
 }
 
-bool ArchHooks_Win32::GoToURL( RString sUrl )
+bool ArchHooks_Win32::GoToURL( std::string sUrl )
 {
 	return ::GotoURL( sUrl );
 }
@@ -192,11 +192,11 @@ float ArchHooks_Win32::GetDisplayAspectRatio()
 	return dm.dmPelsWidth / (float)dm.dmPelsHeight;
 }
 
-RString ArchHooks_Win32::GetClipboard()
+std::string ArchHooks_Win32::GetClipboard()
 {
 	HGLOBAL hgl;
 	LPTSTR lpstr;
-	RString ret;
+	std::string ret;
 
 	// First make sure that the clipboard actually contains a string
 	// (or something stringifiable)
@@ -205,15 +205,15 @@ RString ArchHooks_Win32::GetClipboard()
 	// Yes. All this mess just to gain access to the string stored by the clipboard.
 	// I'm having flashbacks to Berkeley sockets.
 	if(unlikely( !OpenClipboard( nullptr ) ))
-		{ LOG->Warn(werr_ssprintf( GetLastError(), "InputHandler_DirectInput: OpenClipboard() failed" )); return ""; }
+		{ LOG->Warn(werr_ssprintf( GetLastError(), "InputHandler_DirectInput: OpenClipboard() failed" ).c_str()); return ""; }
 
 	hgl = GetClipboardData( CF_TEXT );
 	if(unlikely( hgl == nullptr ))
-		{ LOG->Warn(werr_ssprintf( GetLastError(), "InputHandler_DirectInput: GetClipboardData() failed" )); CloseClipboard(); return ""; }
+		{ LOG->Warn(werr_ssprintf( GetLastError(), "InputHandler_DirectInput: GetClipboardData() failed" ).c_str()); CloseClipboard(); return ""; }
 
 	lpstr = (LPTSTR) GlobalLock( hgl );
 	if(unlikely( lpstr == nullptr ))
-		{ LOG->Warn(werr_ssprintf( GetLastError(), "InputHandler_DirectInput: GlobalLock() failed" )); CloseClipboard(); return ""; }
+		{ LOG->Warn(werr_ssprintf( GetLastError(), "InputHandler_DirectInput: GlobalLock() failed" ).c_str()); CloseClipboard(); return ""; }
 
 	// And finally, we have a char (or wchar_t) array of the clipboard contents,
 	// pointed to by sToPaste.
@@ -222,7 +222,7 @@ RString ArchHooks_Win32::GetClipboard()
 #ifdef UNICODE
 	ret = WStringToRString( wstring()+*lpstr );
 #else
-	ret = RString( lpstr );
+	ret = std::string( lpstr );
 #endif
 
 	// And now we clean up.

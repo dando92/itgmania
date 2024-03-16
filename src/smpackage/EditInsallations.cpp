@@ -12,6 +12,7 @@
 #include "RageFileManager.h"
 #include "RageUtil.h"
 #include "arch/Dialog/Dialog.h"
+#include "StringUtil.h"
 
 #include <vector>
 
@@ -63,10 +64,10 @@ BOOL EditInsallations::OnInitDialog()
 	// TODO: Add extra initialization here
 	DialogUtil::LocalizeDialogAndContents( *this );
 
-	std::vector<RString> vs;
+	std::vector<std::string> vs;
 	SMPackageUtil::GetGameInstallDirs( vs );
 	for( unsigned i=0; i<vs.size(); i++ )
-		m_list.AddString( vs[i] );
+		m_list.AddString( vs[i].c_str() );
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	              // EXCEPTION: OCX Property Pages should return FALSE
@@ -99,7 +100,7 @@ static LocalizedString NOT_A_VALID_INSTALLATION_DIR	("EditInstallations","'%s' i
 void EditInsallations::OnButtonAdd()
 {
 	// TODO: Add your control notification handler code here
-	RString sNewDir;
+	std::string sNewDir;
 	{
 		CString s;
 		m_edit.GetWindowText( s );
@@ -117,34 +118,34 @@ void EditInsallations::OnButtonAdd()
 	{
 		CString sDir;
 		m_list.GetText( i, sDir );
-		if( sDir.CompareNoCase(sNewDir)==0 )
+		if( StringUtil::EqualsNoCase(std::string(sDir), sNewDir) )
 			return;
 	}
 
 	if( !SMPackageUtil::IsValidInstallDir(sNewDir) )
 	{
-		Dialog::OK( ssprintf(NOT_A_VALID_INSTALLATION_DIR.GetValue(),sNewDir.c_str()) );
+		Dialog::OK( ssprintf(NOT_A_VALID_INSTALLATION_DIR.GetValue().c_str(),sNewDir.c_str()) );
 		return;
 	}
 
-	m_list.AddString( sNewDir );
+	m_list.AddString( sNewDir.c_str() );
 }
 
 void EditInsallations::OnOK()
 {
-	std::vector<RString> vs;
+	std::vector<std::string> vs;
 
 	for( int i=0; i<m_list.GetCount(); i++ )
 	{
 		CString sDir;
 		m_list.GetText( i, sDir );
-		RString s = sDir;
+		std::string s = std::string(sDir);
 		vs.push_back( s );
 	}
 	SMPackageUtil::WriteGameInstallDirs( vs );
 
 	// set the new default
-	std::vector<RString> asInstallDirs;
+	std::vector<std::string> asInstallDirs;
 	SMPackageUtil::GetGameInstallDirs( asInstallDirs );
 	FILEMAN->Remount( "/", asInstallDirs[0] );
 

@@ -927,7 +927,7 @@ void NoteData::LoadTransformed( const NoteData& in, int iNewNumTracks, const int
 	{
 		const int iOriginalTrack = iOriginalTrackToTakeFrom[t];
 		ASSERT_M( iOriginalTrack < in.GetNumTracks(), ssprintf("from OriginalTrack %i >= %i (#tracks) (taking from %i)",
-			iOriginalTrack, in.GetNumTracks(), iOriginalTrackToTakeFrom[t]));
+			iOriginalTrack, in.GetNumTracks(), iOriginalTrackToTakeFrom[t]).c_str());
 
 		if( iOriginalTrack == -1 )
 			continue;

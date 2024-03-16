@@ -11,6 +11,7 @@
 #include "RageUtil_WorkerThread.h"
 #include "arch/MemoryCard/MemoryCardDriver_Null.h"
 #include "LuaManager.h"
+#include "StringUtil.h"
 
 #include <cstddef>
 #include <vector>
@@ -18,25 +19,25 @@
 
 MemoryCardManager*	MEMCARDMAN = nullptr;	// global and accessible from anywhere in our program
 
-static void MemoryCardOsMountPointInit( std::size_t /*PlayerNumber*/ i, RString &sNameOut, RString &defaultValueOut )
+static void MemoryCardOsMountPointInit( std::size_t /*PlayerNumber*/ i, std::string &sNameOut, std::string &defaultValueOut )
 {
 	sNameOut = ssprintf( "MemoryCardOsMountPointP%d", int(i+1) );
 	defaultValueOut = "";
 }
 
-static void MemoryCardUsbBusInit( std::size_t /*PlayerNumber*/ i, RString &sNameOut, int &defaultValueOut )
+static void MemoryCardUsbBusInit( std::size_t /*PlayerNumber*/ i, std::string &sNameOut, int &defaultValueOut )
 {
 	sNameOut = ssprintf( "MemoryCardUsbBusP%d", int(i+1) );
 	defaultValueOut = -1;
 }
 
-static void MemoryCardUsbPortInit( std::size_t /*PlayerNumber*/ i, RString &sNameOut, int &defaultValueOut )
+static void MemoryCardUsbPortInit( std::size_t /*PlayerNumber*/ i, std::string &sNameOut, int &defaultValueOut )
 {
 	sNameOut = ssprintf( "MemoryCardUsbPortP%d",int(i+1) );
 	defaultValueOut = -1;
 }
 
-static void MemoryCardUsbLevelInit( std::size_t /*PlayerNumber*/ i, RString &sNameOut, int &defaultValueOut )
+static void MemoryCardUsbLevelInit( std::size_t /*PlayerNumber*/ i, std::string &sNameOut, int &defaultValueOut )
 {
 	sNameOut = ssprintf( "MemoryCardUsbLevelP%d", int(i+1) );
 	defaultValueOut = -1;
@@ -46,23 +47,23 @@ static Preference<bool>	g_bMemoryCards( "MemoryCards", false );
 static Preference<bool>	g_bMemoryCardProfiles( "MemoryCardProfiles", true );
 
 // if set, always use the device that mounts to this point
-Preference1D<RString>	MemoryCardManager::m_sMemoryCardOsMountPoint( MemoryCardOsMountPointInit, NUM_PLAYERS, PreferenceType::Immutable );
+Preference1D<std::string>	MemoryCardManager::m_sMemoryCardOsMountPoint( MemoryCardOsMountPointInit, NUM_PLAYERS, PreferenceType::Immutable );
 
 // Look for this level, bus, port when assigning cards. -1 = match any
 Preference1D<int>	MemoryCardManager::m_iMemoryCardUsbBus( MemoryCardUsbBusInit, NUM_PLAYERS, PreferenceType::Immutable );
 Preference1D<int>	MemoryCardManager::m_iMemoryCardUsbPort( MemoryCardUsbPortInit, NUM_PLAYERS, PreferenceType::Immutable );
 Preference1D<int>	MemoryCardManager::m_iMemoryCardUsbLevel( MemoryCardUsbLevelInit, NUM_PLAYERS, PreferenceType::Immutable );
 
-Preference<RString>	MemoryCardManager::m_sEditorMemoryCardOsMountPoint( "EditorMemoryCardOsMountPoint", "", nullptr, PreferenceType::Immutable );
+Preference<std::string>	MemoryCardManager::m_sEditorMemoryCardOsMountPoint( "EditorMemoryCardOsMountPoint", "", nullptr, PreferenceType::Immutable );
 
-const RString MEM_CARD_MOUNT_POINT[NUM_PLAYERS] =
+const std::string MEM_CARD_MOUNT_POINT[NUM_PLAYERS] =
 {
 	// @ is important; see RageFileManager LoadedDriver::GetPath
 	"/@mc1/",
 	"/@mc2/",
 };
 
-static const RString MEM_CARD_MOUNT_POINT_INTERNAL[NUM_PLAYERS] =
+static const std::string MEM_CARD_MOUNT_POINT_INTERNAL[NUM_PLAYERS] =
 {
 	// @ is important; see RageFileManager LoadedDriver::GetPath
 	"/@mc1int/",
@@ -380,7 +381,7 @@ void MemoryCardManager::UpdateAssignments()
 		{
 			// search for card dir match
 			if( !m_sMemoryCardOsMountPoint[p].Get().empty() &&
-				d->sOsMountDir.CompareNoCase(m_sMemoryCardOsMountPoint[p].Get()) )
+				StringUtil::CompareNoCase(d->sOsMountDir, m_sMemoryCardOsMountPoint[p].Get()) )
 				continue; // not a match
 
 			// search for USB bus match
@@ -415,7 +416,7 @@ void MemoryCardManager::CheckStateChanges()
 		const UsbStorageDevice &new_device = m_Device[p];
 
 		MemoryCardState state = MemoryCardState_Invalid;
-		RString sError;
+		std::string sError;
 
 		if( m_bCardLocked[p] )
 		{
@@ -675,10 +676,10 @@ void MemoryCardManager::UnmountCard( PlayerNumber pn )
 	}
 }
 
-bool MemoryCardManager::PathIsMemCard( RString sDir ) const
+bool MemoryCardManager::PathIsMemCard( std::string sDir ) const
 {
 	FOREACH_PlayerNumber( p )
-		if( !sDir.Left(MEM_CARD_MOUNT_POINT[p].size()).CompareNoCase( MEM_CARD_MOUNT_POINT[p] ) )
+		if( !StringUtil::CompareNoCase(sDir.substr(0, MEM_CARD_MOUNT_POINT[p].size()), MEM_CARD_MOUNT_POINT[p]) )
 			return true;
 	return false;
 }
@@ -688,7 +689,7 @@ bool MemoryCardManager::IsNameAvailable( PlayerNumber pn ) const
 	return m_Device[pn].bIsNameAvailable;
 }
 
-RString MemoryCardManager::GetName( PlayerNumber pn ) const
+std::string MemoryCardManager::GetName( PlayerNumber pn ) const
 {
 	return m_Device[pn].sName;
 }
@@ -731,7 +732,7 @@ public:
 	static int GetName( T* p, lua_State *L )
 	{
 		PlayerNumber pn = Enum::Check<PlayerNumber>(L, 1);
-		lua_pushstring(L, p->GetName(pn) );
+		lua_pushstring(L, p->GetName(pn).c_str() );
 		return 1;
 	}
 

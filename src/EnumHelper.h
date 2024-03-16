@@ -3,6 +3,7 @@
 
 #include "LuaReference.h"
 #include "RageUtil.h"
+#include "StringUtil.h"
 #include <memory>
 
 #ifndef _MSC_VER
@@ -76,21 +77,21 @@ namespace Enum
 	}
 };
 
-const RString &EnumToString( int iVal, int iMax, const char **szNameArray, std::unique_ptr<RString> *pNameCache ); // XToString helper
+const std::string &EnumToString( int iVal, int iMax, const char **szNameArray, std::unique_ptr<std::string> *pNameCache ); // XToString helper
 
 #define XToString(X) \
-const RString& X##ToString(X x); \
+const std::string& X##ToString(X x); \
 static_assert( NUM_##X == ARRAYLEN(X##Names) ); \
-const RString& X##ToString( X x ) \
+const std::string& X##ToString( X x ) \
 {	\
-	static std::unique_ptr<RString> as_##X##Name[NUM_##X+2]; \
+	static std::unique_ptr<std::string> as_##X##Name[NUM_##X+2]; \
 	return EnumToString( x, NUM_##X, X##Names, as_##X##Name ); \
 } \
-namespace StringConversion { template<> RString ToString<X>( const X &value ) { return X##ToString(value); } }
+namespace StringConversion { template<> std::string ToString<X>( const X &value ) { return X##ToString(value); } }
 
 #define XToLocalizedString(X)      \
-const RString &X##ToLocalizedString(X x); \
-const RString &X##ToLocalizedString( X x ) \
+const std::string &X##ToLocalizedString(X x); \
+const std::string &X##ToLocalizedString( X x ) \
 {       \
 	static std::unique_ptr<LocalizedString> g_##X##Name[NUM_##X]; \
 	if( g_##X##Name[0].get() == nullptr ) { \
@@ -104,17 +105,17 @@ const RString &X##ToLocalizedString( X x ) \
 }
 
 #define StringToX(X)	\
-X StringTo##X(const RString&); \
-X StringTo##X( const RString& s ) \
+X StringTo##X(const std::string&); \
+X StringTo##X( const std::string& s ) \
 {	\
 	for( unsigned i = 0; i < ARRAYLEN(X##Names); ++i )	\
-		if( !s.CompareNoCase(X##Names[i]) )	\
+		if( StringUtil::EqualsNoCase(s, X##Names[i]) )	\
 			return (X)i;	\
 	return X##_Invalid;	\
 } \
 namespace StringConversion \
 { \
-	template<> bool FromString<X>( const RString &sValue, X &out ) \
+	template<> bool FromString<X>( const std::string &sValue, X &out ) \
 	{ \
 		out = StringTo##X(sValue); \
 		return out != X##_Invalid; \
@@ -132,8 +133,8 @@ static void Lua##X(lua_State* L) \
 	lua_newtable( L ); \
 	FOREACH_ENUM( X, i ) \
 	{ \
-		RString s = X##ToString( i ); \
-		lua_pushstring( L, (#X "_")+s ); \
+		std::string s = X##ToString( i ); \
+		lua_pushstring( L, (std::string(#X "_") + s).c_str() ); \
 		lua_rawseti( L, -2, i+1 ); /* 1-based */ \
 	} \
 	EnumTraits<X>::EnumToString.SetFromStack( L ); \
@@ -143,13 +144,13 @@ static void Lua##X(lua_State* L) \
 	lua_newtable( L ); \
 	FOREACH_ENUM( X, i ) \
 	{ \
-		RString s = X##ToString( i ); \
-		lua_pushstring( L, (#X "_")+s ); \
+		std::string s = X##ToString( i ); \
+		lua_pushstring( L, (std::string(#X "_") + s).c_str() ); \
 		lua_pushnumber( L, i ); /* 0-based */ \
 		lua_rawset( L, -3 ); \
 		/* Compatibility with old, case-insensitive values */ \
-		s.MakeLower(); \
-		lua_pushstring( L, s ); \
+		StringUtil::MakeLower(s); \
+		lua_pushstring( L, s.c_str() ); \
 		lua_pushnumber( L, i ); /* 0-based */ \
 		lua_rawset( L, -3 ); \
 		/* Compatibility with old, raw values */ \

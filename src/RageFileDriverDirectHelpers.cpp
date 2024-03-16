@@ -19,15 +19,15 @@
 #include <io.h>
 #endif
 
-RString DoPathReplace(const RString &sPath)
+std::string DoPathReplace(const std::string &sPath)
 {
-	RString TempPath = sPath;
+	std::string TempPath = sPath;
 	return TempPath;
 }
 
 
 #if defined(WIN32)
-static bool WinMoveFileInternal( const RString &sOldPath, const RString &sNewPath )
+static bool WinMoveFileInternal( const std::string &sOldPath, const std::string &sNewPath )
 {
 	static bool Win9x = false;
 
@@ -38,7 +38,7 @@ static bool WinMoveFileInternal( const RString &sOldPath, const RString &sNewPat
 	 * to be robust on 9x anyway). */
 	if( !Win9x )
 	{
-		if( MoveFileEx( sOldPath, sNewPath, MOVEFILE_REPLACE_EXISTING ) )
+		if( MoveFileEx( sOldPath.c_str(), sNewPath.c_str(), MOVEFILE_REPLACE_EXISTING ) )
 			return true;
 
 		// On Win9x, MoveFileEx is expected to fail (returns ERROR_CALL_NOT_IMPLEMENTED).
@@ -49,40 +49,40 @@ static bool WinMoveFileInternal( const RString &sOldPath, const RString &sNewPat
 			return false;
 	}
 
-	if( MoveFile( sOldPath, sNewPath ) )
+	if( MoveFile( sOldPath.c_str(), sNewPath.c_str() ) )
 		return true;
 
 	if( GetLastError() != ERROR_ALREADY_EXISTS )
 		return false;
 
-	if( !DeleteFile( sNewPath ) )
+	if( !DeleteFile( sNewPath.c_str() ) )
 		return false;
 
-	return !!MoveFile( sOldPath, sNewPath );
+	return !!MoveFile( sOldPath.c_str(), sNewPath.c_str() );
 }
 
-bool WinMoveFile( RString sOldPath, RString sNewPath )
+bool WinMoveFile( std::string sOldPath, std::string sNewPath )
 {
 	if( WinMoveFileInternal( DoPathReplace(sOldPath), DoPathReplace(sNewPath) ) )
 		return true;
 	if( GetLastError() != ERROR_ACCESS_DENIED )
 		return false;
 	/* Try turning off the read-only bit on the file we're overwriting. */
-	SetFileAttributes( DoPathReplace(sNewPath), FILE_ATTRIBUTE_NORMAL );
+	SetFileAttributes( DoPathReplace(sNewPath).c_str(), FILE_ATTRIBUTE_NORMAL );
 
 	return WinMoveFileInternal( DoPathReplace(sOldPath), DoPathReplace(sNewPath) );
 }
 #endif
 
 /* mkdir -p.  Doesn't fail if Path already exists and is a directory. */
-bool CreateDirectories( RString Path )
+bool CreateDirectories( std::string Path )
 {
 	// XXX: handle "//foo/bar" paths in Windows
-	std::vector<RString> parts;
-	RString curpath;
+	std::vector<std::string> parts;
+	std::string curpath;
 
 	// If Path is absolute, add the initial slash ("ignore empty" will remove it).
-	if( Path.Left(1) == "/" )
+	if( StringUtil::StartsWith(Path, "/") )
 		curpath = "/";
 
 	// Ignore empty, so eg. "/foo/bar//baz" doesn't try to create "/foo/bar" twice.
@@ -102,7 +102,7 @@ bool CreateDirectories( RString Path )
 		}
 #endif
 
-		if( DoMkdir(curpath, 0777) == 0 )
+		if( DoMkdir(curpath.c_str(), 0777) == 0 )
 			continue;
 
 #if defined(WIN32)
@@ -112,7 +112,7 @@ bool CreateDirectories( RString Path )
 		 * going. */
 		if( errno == ENOENT )
 		{
-			WARN( ssprintf("Couldn't create %s: %s", curpath.c_str(), strerror(errno)) );
+			WARN( ssprintf("Couldn't create %s: %s", curpath.c_str(), strerror(errno)).c_str() );
 			errno = EEXIST;
 		}
 #endif
@@ -121,45 +121,45 @@ bool CreateDirectories( RString Path )
 		{
 			/* Make sure it's a directory. */
 			struct stat st;
-			if( DoStat(curpath, &st) != -1 && !(st.st_mode & S_IFDIR) )
+			if( DoStat(curpath.c_str(), &st) != -1 && !(st.st_mode & S_IFDIR) )
 			{
-				WARN( ssprintf("Couldn't create %s: path exists and is not a directory", curpath.c_str()) );
+				WARN( ssprintf("Couldn't create %s: path exists and is not a directory", curpath.c_str()).c_str() );
 				return false;
 			}
 
 			continue;		// we expect to see this error
 		}
 
-		WARN( ssprintf("Couldn't create %s: %s", curpath.c_str(), strerror(errno)) );
+		WARN( ssprintf("Couldn't create %s: %s", curpath.c_str(), strerror(errno)).c_str() );
 		return false;
 	}
 
 	return true;
 }
 
-DirectFilenameDB::DirectFilenameDB( RString root_ )
+DirectFilenameDB::DirectFilenameDB( std::string root_ )
 {
 	ExpireSeconds = 30;
 	SetRoot( root_ );
 }
 
 
-void DirectFilenameDB::SetRoot( RString root_ )
+void DirectFilenameDB::SetRoot( std::string root_ )
 {
 	root = root_;
 
 	// "\abcd\" -> "/abcd/":
-	root.Replace( "\\", "/" );
+	StringUtil::Replace(root, '\\', '/');
 
 	// "/abcd/" -> "/abcd":
-	if( root.Right(1) == "/" )
+	if( StringUtil::EndsWith(root, "/") )
 		root.erase( root.size()-1, 1 );
 }
 
-void DirectFilenameDB::CacheFile( const RString &sPath )
+void DirectFilenameDB::CacheFile( const std::string &sPath )
 {
 	CHECKPOINT_M( root+sPath );
-	RString sDir = Dirname( sPath );
+	std::string sDir = Dirname( sPath );
 	FileSet *pFileSet = GetFileSet( sDir, false );
 	if( pFileSet == nullptr )
 	{
@@ -173,7 +173,7 @@ void DirectFilenameDB::CacheFile( const RString &sPath )
 #if defined(WIN32)
 	// There is almost surely a better way to do this
 	WIN32_FIND_DATA fd;
-	HANDLE hFind = DoFindFirstFile( root+sPath, &fd );
+	HANDLE hFind = DoFindFirstFile( (root + sPath).c_str(), &fd );
 	if( hFind == INVALID_HANDLE_VALUE )
 	{
 		m_Mutex.Unlock(); // Locked by GetFileSet()
@@ -196,7 +196,7 @@ void DirectFilenameDB::CacheFile( const RString &sPath )
 		// If it's a broken symlink, ignore it.  Otherwise, warn.
 		// Huh?
 		WARN( ssprintf("File '%s' is gone! (%s)",
-				sPath.c_str(), strerror(iError)) );
+				sPath.c_str(), strerror(iError)).c_str() );
 	}
 	else
 	{
@@ -210,9 +210,9 @@ void DirectFilenameDB::CacheFile( const RString &sPath )
 	m_Mutex.Unlock(); // Locked by GetFileSet()
 }
 
-void DirectFilenameDB::PopulateFileSet( FileSet &fs, const RString &path )
+void DirectFilenameDB::PopulateFileSet( FileSet &fs, const std::string &path )
 {
-	RString sPath = path;
+	std::string sPath = path;
 
 	// Resolve path cases (path/Path -> PATH/path).
 	ResolvePath( sPath );
@@ -223,10 +223,10 @@ void DirectFilenameDB::PopulateFileSet( FileSet &fs, const RString &path )
 #if defined(WIN32)
 	WIN32_FIND_DATA fd;
 
-	if ( sPath.size() > 0  && sPath.Right(1) == "/" )
+	if ( !sPath.empty() && StringUtil::EndsWith(sPath, '/') )
 		sPath.erase( sPath.size() - 1 );
 
-	HANDLE hFind = DoFindFirstFile( root+sPath+"/*", &fd );
+	HANDLE hFind = DoFindFirstFile( (root + sPath + "/*").c_str(), &fd );
 	CHECKPOINT_M( root+sPath+"/*" );
 
 	if( hFind == INVALID_HANDLE_VALUE )
@@ -301,21 +301,21 @@ void DirectFilenameDB::PopulateFileSet( FileSet &fs, const RString &path )
 	 * performance-critical situations.  To avoid incurring some of the overheard
 	 * due to ignore markers, delete the file instead instead of using an ignore marker.
 	 */
-	static const RString IGNORE_MARKER_BEGINNING = "ignore-";
+	static const std::string IGNORE_MARKER_BEGINNING = "ignore-";
 
-	std::vector<RString> vsFilesToRemove;
+	std::vector<std::string> vsFilesToRemove;
 	for( std::set<File>::iterator iter = fs.files.lower_bound(IGNORE_MARKER_BEGINNING);
 		 iter != fs.files.end();
 		 ++iter )
 	{
 		if( !BeginsWith( iter->lname, IGNORE_MARKER_BEGINNING ) )
 			break;
-		RString sFileLNameToIgnore = iter->lname.Right( iter->lname.length() - IGNORE_MARKER_BEGINNING.length() );
+		std::string sFileLNameToIgnore = iter->lname.substr(IGNORE_MARKER_BEGINNING.length());
 		vsFilesToRemove.push_back( iter->name );
 		vsFilesToRemove.push_back( sFileLNameToIgnore );
 	}
 
-	for (RString const &iter : vsFilesToRemove)
+	for (std::string const &iter : vsFilesToRemove)
 	{
 		// Erase the file corresponding to the ignore marker
 		File fileToDelete;

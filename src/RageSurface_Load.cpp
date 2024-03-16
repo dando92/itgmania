@@ -13,17 +13,17 @@
 #include <vector>
 
 
-static RageSurface *TryOpenFile( RString sPath, bool bHeaderOnly, RString &error, RString format, bool &bKeepTrying )
+static RageSurface *TryOpenFile( std::string sPath, bool bHeaderOnly, std::string &error, std::string format, bool &bKeepTrying )
 {
 	RageSurface *ret = nullptr;
 	RageSurfaceUtils::OpenResult result;
-	if( !format.CompareNoCase("png") )
+	if( StringUtil::EqualsNoCase(format, "png") )
 		result = RageSurface_Load_PNG( sPath, ret, bHeaderOnly, error );
-	else if( !format.CompareNoCase("gif") )
+	else if( StringUtil::EqualsNoCase(format, "gif") )
 		result = RageSurface_Load_GIF( sPath, ret, bHeaderOnly, error );
-	else if( !format.CompareNoCase("jpg") || !format.CompareNoCase("jpeg") )
+	else if( StringUtil::EqualsNoCase(format, "jpg") || StringUtil::EqualsNoCase(format, "jpeg") )
 		result = RageSurface_Load_JPEG( sPath, ret, bHeaderOnly, error );
-	else if( !format.CompareNoCase("bmp") )
+	else if( StringUtil::EqualsNoCase(format, "bmp") )
 		result = RageSurface_Load_BMP( sPath, ret, bHeaderOnly, error );
 	else
 	{
@@ -76,7 +76,7 @@ static RageSurface *TryOpenFile( RString sPath, bool bHeaderOnly, RString &error
 	return nullptr;
 }
 
-RageSurface *RageSurfaceUtils::LoadFile( const RString &sPath, RString &error, bool bHeaderOnly )
+RageSurface *RageSurfaceUtils::LoadFile( const std::string &sPath, std::string &error, bool bHeaderOnly )
 {
 	{
 		RageFile TestOpen;
@@ -87,16 +87,16 @@ RageSurface *RageSurfaceUtils::LoadFile( const RString &sPath, RString &error, b
 		}
 	}
 
-	std::set<RString> FileTypes;
-	std::vector<RString> const& exts= ActorUtil::GetTypeExtensionList(FT_Bitmap);
-	for(std::vector<RString>::const_iterator curr= exts.begin();
+	std::set<std::string> FileTypes;
+	std::vector<std::string> const& exts= ActorUtil::GetTypeExtensionList(FT_Bitmap);
+	for(std::vector<std::string>::const_iterator curr= exts.begin();
 			curr != exts.end(); ++curr)
 	{
 		FileTypes.insert(*curr);
 	}
 
-	RString format = GetExtension(sPath);
-	format.MakeLower();
+	std::string format = GetExtension(sPath);
+	StringUtil::MakeLower(format);
 
 	bool bKeepTrying = true;
 
@@ -109,7 +109,7 @@ RageSurface *RageSurfaceUtils::LoadFile( const RString &sPath, RString &error, b
 		FileTypes.erase( format );
 	}
 
-	for( std::set<RString>::iterator it = FileTypes.begin(); bKeepTrying && it != FileTypes.end(); ++it )
+	for( std::set<std::string>::iterator it = FileTypes.begin(); bKeepTrying && it != FileTypes.end(); ++it )
 	{
 		RageSurface *ret = TryOpenFile( sPath, bHeaderOnly, error, *it, bKeepTrying );
 		if( ret )

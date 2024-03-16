@@ -15,7 +15,7 @@ Window X11Helper::Win = None;
 static int ErrorCallback( Display*, XErrorEvent* );
 static int FatalCallback( Display* );
 
-static Preference<RString>		g_XWMName( "XWMName", PRODUCT_ID );
+static Preference<std::string>		g_XWMName( "XWMName", PRODUCT_ID );
 
 static bool display_supports_dpms_extension= false;
 static bool dpms_state_at_startup= false;

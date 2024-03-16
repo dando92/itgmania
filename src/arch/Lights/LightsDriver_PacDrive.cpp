@@ -21,7 +21,7 @@ PacSetLEDStates* m_pacset = nullptr;
 int iLightingOrder = 0;
 
 //Adds new preference to allow for different light wiring setups
-static Preference<RString> g_sPacDriveLightOrdering("PacDriveLightOrdering", "lumenar");
+static Preference<std::string> g_sPacDriveLightOrdering("PacDriveLightOrdering", "lumenar");
 
 
 LightsDriver_PacDrive::LightsDriver_PacDrive()
@@ -54,8 +54,8 @@ LightsDriver_PacDrive::LightsDriver_PacDrive()
 	{
 		PacDriveConnected = true; // set connected
 		m_pacset(0, 0x0);  // clear all lights for device i
-		RString lightOrder = g_sPacDriveLightOrdering.Get();
-		if (lightOrder.CompareNoCase("lumenar") == 0 || lightOrder.CompareNoCase("openitg") == 0) {
+		std::string lightOrder = g_sPacDriveLightOrdering.Get();
+		if (StringUtil::EqualsNoCase(lightOrder, "lumenar") || StringUtil::EqualsNoCase(lightOrder, "openitg")) {
 			iLightingOrder = 1;
 		}
 	}

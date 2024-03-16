@@ -25,7 +25,7 @@ void RageSoundDriver_DSound_Software::MixerThread()
 {
 	if( !SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL) )
 		if( !SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL) )
-			LOG->Warn(werr_ssprintf(GetLastError(), "Failed to set sound thread priority"));
+			LOG->Warn(werr_ssprintf(GetLastError(), "Failed to set sound thread priority").c_str());
 
 	/* Fill a buffer before we start playing, so we don't play whatever junk is
 	 * in the buffer. */
@@ -79,9 +79,9 @@ RageSoundDriver_DSound_Software::RageSoundDriver_DSound_Software()
 	m_pPCM = nullptr;
 }
 
-RString RageSoundDriver_DSound_Software::Init()
+std::string RageSoundDriver_DSound_Software::Init()
 {
-	RString sError = ds.Init();
+	std::string sError = ds.Init();
 	if( sError != "" )
 		return sError;
 
@@ -110,7 +110,7 @@ RString RageSoundDriver_DSound_Software::Init()
 	m_MixingThread.SetName("Mixer thread");
 	m_MixingThread.Create( MixerThread_start, this );
 
-	return RString();
+	return std::string();
 }
 
 RageSoundDriver_DSound_Software::~RageSoundDriver_DSound_Software()
@@ -132,7 +132,7 @@ RageSoundDriver_DSound_Software::~RageSoundDriver_DSound_Software()
 void RageSoundDriver_DSound_Software::SetupDecodingThread()
 {
 	if( !SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL) )
-		LOG->Warn( werr_ssprintf(GetLastError(), "Failed to set decoding thread priority") );
+		LOG->Warn( werr_ssprintf(GetLastError(), "Failed to set decoding thread priority").c_str() );
 }
 
 float RageSoundDriver_DSound_Software::GetPlayLatency() const

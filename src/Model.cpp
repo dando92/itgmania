@@ -21,7 +21,7 @@
 REGISTER_ACTOR_CLASS( Model );
 
 static const float FRAMES_PER_SECOND = 30;
-static const RString DEFAULT_ANIMATION_NAME = "default";
+static const std::string DEFAULT_ANIMATION_NAME = "default";
 
 Model::Model()
 {
@@ -59,12 +59,12 @@ void Model::Clear()
 		DISPLAY->DeleteCompiledGeometry( m_pTempGeometry );
 }
 
-void Model::Load( const RString &sFile )
+void Model::Load( const std::string &sFile )
 {
 	if( sFile == "" ) return;
 
-	RString sExt = GetExtension(sFile);
-	sExt.MakeLower();
+	std::string sExt = GetExtension(sFile);
+	StringUtil::MakeLower(sExt);
 	if( sExt=="txt" )
 		LoadMilkshapeAscii( sFile );
 	RecalcAnimationLengthSeconds();
@@ -73,12 +73,12 @@ void Model::Load( const RString &sFile )
 #define THROW RageException::Throw( "Parse error in \"%s\" at line %d: \"%s\".", sPath.c_str(), iLineNum, sLine.c_str() )
 
 // TODO: Move MS3D loading into its own class. - Colby
-void Model::LoadMilkshapeAscii( const RString &sPath )
+void Model::LoadMilkshapeAscii( const std::string &sPath )
 {
 	LoadPieces( sPath, sPath, sPath );
 }
 
-void Model::LoadPieces( const RString &sMeshesPath, const RString &sMaterialsPath, const RString &sBonesPath )
+void Model::LoadPieces( const std::string &sMeshesPath, const std::string &sMaterialsPath, const std::string &sBonesPath )
 {
 	Clear();
 
@@ -113,7 +113,7 @@ void Model::LoadPieces( const RString &sMeshesPath, const RString &sMaterialsPat
 
 void Model::LoadFromNode( const XNode* pNode )
 {
-	RString s1, s2, s3;
+	std::string s1, s2, s3;
 	ActorUtil::GetAttrPath( pNode, "Meshes", s1 );
 	ActorUtil::GetAttrPath( pNode, "Materials", s2 );
 	ActorUtil::GetAttrPath( pNode, "Bones", s3 );
@@ -128,34 +128,34 @@ void Model::LoadFromNode( const XNode* pNode )
 }
 
 
-void Model::LoadMaterialsFromMilkshapeAscii( const RString &_sPath )
+void Model::LoadMaterialsFromMilkshapeAscii( const std::string &_sPath )
 {
-	RString sPath = _sPath;
+	std::string sPath = _sPath;
 
 	FixSlashesInPlace(sPath);
-	const RString sDir = Dirname( sPath );
+	const std::string sDir = Dirname( sPath );
 
 	RageFile f;
 	if( !f.Open( sPath ) )
 		RageException::Throw( "Model::LoadMilkshapeAscii Could not open \"%s\": %s", sPath.c_str(), f.GetError().c_str() );
 
-	RString sLine;
+	std::string sLine;
 	int iLineNum = 0;
 
 	while( f.GetLine( sLine ) > 0 )
 	{
 		iLineNum++;
 
-		if( !strncmp (sLine, "//", 2) )
+		if( !strncmp (sLine.c_str(), "//", 2) )
 			continue;
 
 		int nFrame;
-		if( sscanf(sLine, "Frames: %d", &nFrame) == 1 )
+		if( sscanf(sLine.c_str(), "Frames: %d", &nFrame) == 1 )
 		{
 			// ignore
 			// m_pModel->nTotalFrames = nFrame;
 		}
-		if( sscanf(sLine, "Frame: %d", &nFrame) == 1 )
+		if( sscanf(sLine.c_str(), "Frame: %d", &nFrame) == 1 )
 		{
 			// ignore
 			// m_pModel->nFrame = nFrame;
@@ -163,7 +163,7 @@ void Model::LoadMaterialsFromMilkshapeAscii( const RString &_sPath )
 
 		// materials
 		int nNumMaterials = 0;
-		if( sscanf(sLine, "Materials: %d", &nNumMaterials) == 1 )
+		if( sscanf(sLine.c_str(), "Materials: %d", &nNumMaterials) == 1 )
 		{
 			m_Materials.resize( nNumMaterials );
 
@@ -176,7 +176,7 @@ void Model::LoadMaterialsFromMilkshapeAscii( const RString &_sPath )
 				// name
 				if( f.GetLine( sLine ) <= 0 )
 					THROW;
-				if( sscanf(sLine, "\"%255[^\"]\"", szName) != 1 )
+				if( sscanf(sLine.c_str(), "\"%255[^\"]\"", szName) != 1 )
 					THROW;
 				Material.sName = szName;
 
@@ -184,7 +184,7 @@ void Model::LoadMaterialsFromMilkshapeAscii( const RString &_sPath )
 				if( f.GetLine( sLine ) <= 0 )
 					THROW;
 				RageVector4 Ambient;
-				if( sscanf(sLine, "%f %f %f %f", &Ambient[0], &Ambient[1], &Ambient[2], &Ambient[3]) != 4 )
+				if( sscanf(sLine.c_str(), "%f %f %f %f", &Ambient[0], &Ambient[1], &Ambient[2], &Ambient[3]) != 4 )
 					THROW;
 				Material.Ambient = Ambient;
 
@@ -192,7 +192,7 @@ void Model::LoadMaterialsFromMilkshapeAscii( const RString &_sPath )
 				if( f.GetLine( sLine ) <= 0 )
 					THROW;
 				RageVector4 Diffuse;
-				if( sscanf(sLine, "%f %f %f %f", &Diffuse[0], &Diffuse[1], &Diffuse[2], &Diffuse[3]) != 4 )
+				if( sscanf(sLine.c_str(), "%f %f %f %f", &Diffuse[0], &Diffuse[1], &Diffuse[2], &Diffuse[3]) != 4 )
 					THROW;
 				Material.Diffuse = Diffuse;
 
@@ -200,7 +200,7 @@ void Model::LoadMaterialsFromMilkshapeAscii( const RString &_sPath )
 				if( f.GetLine( sLine ) <= 0 )
 					THROW;
 				RageVector4 Specular;
-				if( sscanf(sLine, "%f %f %f %f", &Specular[0], &Specular[1], &Specular[2], &Specular[3]) != 4 )
+				if( sscanf(sLine.c_str(), "%f %f %f %f", &Specular[0], &Specular[1], &Specular[2], &Specular[3]) != 4 )
 					THROW;
 				Material.Specular = Specular;
 
@@ -208,7 +208,7 @@ void Model::LoadMaterialsFromMilkshapeAscii( const RString &_sPath )
 				if( f.GetLine( sLine ) <= 0 )
 					THROW;
 				RageVector4 Emissive;
-				if( sscanf (sLine, "%f %f %f %f", &Emissive[0], &Emissive[1], &Emissive[2], &Emissive[3]) != 4 )
+				if( sscanf (sLine.c_str(), "%f %f %f %f", &Emissive[0], &Emissive[1], &Emissive[2], &Emissive[3]) != 4 )
 					THROW;
 				Material.Emissive = Emissive;
 
@@ -232,8 +232,8 @@ void Model::LoadMaterialsFromMilkshapeAscii( const RString &_sPath )
 				if( f.GetLine( sLine ) <= 0 )
 					THROW;
 				strcpy( szName, "" );
-				sscanf( sLine, "\"%255[^\"]\"", szName );
-				RString sDiffuseTexture = szName;
+				sscanf( sLine.c_str(), "\"%255[^\"]\"", szName );
+				std::string sDiffuseTexture = szName;
 
 				if( sDiffuseTexture == "" )
 				{
@@ -241,7 +241,7 @@ void Model::LoadMaterialsFromMilkshapeAscii( const RString &_sPath )
 				}
 				else
 				{
-					RString sTexturePath = sDir + sDiffuseTexture;
+					std::string sTexturePath = sDir + sDiffuseTexture;
 					FixSlashesInPlace( sTexturePath );
 					CollapsePath( sTexturePath );
 					if( !IsAFile(sTexturePath) )
@@ -254,8 +254,8 @@ void Model::LoadMaterialsFromMilkshapeAscii( const RString &_sPath )
 				if( f.GetLine( sLine ) <= 0 )
 					THROW;
 				strcpy( szName, "" );
-				sscanf( sLine, "\"%255[^\"]\"", szName );
-				RString sAlphaTexture = szName;
+				sscanf( sLine.c_str(), "\"%255[^\"]\"", szName );
+				std::string sAlphaTexture = szName;
 
 				if( sAlphaTexture == "" )
 				{
@@ -263,7 +263,7 @@ void Model::LoadMaterialsFromMilkshapeAscii( const RString &_sPath )
 				}
 				else
 				{
-					RString sTexturePath = sDir + sAlphaTexture;
+					std::string sTexturePath = sDir + sAlphaTexture;
 					FixSlashesInPlace( sTexturePath );
 					CollapsePath( sTexturePath );
 					if( !IsAFile(sTexturePath) )
@@ -276,7 +276,7 @@ void Model::LoadMaterialsFromMilkshapeAscii( const RString &_sPath )
 	}
 }
 
-bool Model::LoadMilkshapeAsciiBones( const RString &sAniName, const RString &sPath )
+bool Model::LoadMilkshapeAsciiBones( const std::string &sAniName, const std::string &sPath )
 {
 	m_mapNameToAnimation[sAniName] = msAnimation();
 	msAnimation &Animation = m_mapNameToAnimation[sAniName];
@@ -488,13 +488,13 @@ void Model::DrawMesh( int i ) const
 		DISPLAY->PopMatrix();
 }
 
-void Model::SetDefaultAnimation( RString sAnimation, float fPlayRate )
+void Model::SetDefaultAnimation( std::string sAnimation, float fPlayRate )
 {
 	m_sDefaultAnimation = sAnimation;
 	m_fDefaultAnimationRate = fPlayRate;
 }
 
-void Model::PlayAnimation( const RString &sAniName, float fPlayRate )
+void Model::PlayAnimation( const std::string &sAniName, float fPlayRate )
 {
 	if( m_mapNameToAnimation.find(sAniName) == m_mapNameToAnimation.end() )
 		return;
@@ -783,7 +783,7 @@ public:
 	static int position( T* p, lua_State *L )	{ p->SetPosition( FArg(1) ); COMMON_RETURN_SELF; }
 	static int playanimation( T* p, lua_State *L )	{ p->PlayAnimation(SArg(1),FArg(2)); COMMON_RETURN_SELF; }
 	static int SetDefaultAnimation( T* p, lua_State *L )	{ p->SetDefaultAnimation(SArg(1),FArg(2)); COMMON_RETURN_SELF; }
-	static int GetDefaultAnimation( T* p, lua_State *L )	{ lua_pushstring( L, p->GetDefaultAnimation() ); return 1; }
+	static int GetDefaultAnimation( T* p, lua_State *L )	{ lua_pushstring( L, p->GetDefaultAnimation().c_str() ); return 1; }
 	static int loop( T* p, lua_State *L )		{ p->SetLoop(BArg(1)); COMMON_RETURN_SELF; }
 	static int rate( T* p, lua_State *L )		{ p->SetRate(FArg(1)); COMMON_RETURN_SELF; }
 	static int GetNumStates( T* p, lua_State *L )		{ lua_pushnumber( L, p->GetNumStates() ); return 1; }
