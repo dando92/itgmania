@@ -33,3 +33,6 @@
 	path = extern/libtomcrypt
 	url = https://github.com/libtom/libtomcrypt.git
 	shallow = true
+[submodule "Themes/Simply Love"]
+	path = Themes/Simply Love
+	url = https://github.com/dando92/Simply-Love-SM5.git
