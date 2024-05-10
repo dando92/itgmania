@@ -2,7 +2,7 @@
 #define SRC_SYNCSTARTSCOREKEEPER_H
 
 #include <string>
-#include <arpa/inet.h>
+#include "archutils/Common/sockets.h"
 
 #include "PlayerNumber.h"
 #include "PlayerStageStats.h"

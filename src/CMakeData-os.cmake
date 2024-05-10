@@ -1,3 +1,5 @@
+list(APPEND SMDATA_OS_HPP "archutils/Common/sockets.h")
+
 if(APPLE)
   list(APPEND SMDATA_OS_DARWIN_SRC
               "archutils/Darwin/Crash.mm"
