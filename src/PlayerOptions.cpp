@@ -95,6 +95,7 @@ void PlayerOptions::Init()
 	ZERO( m_bTransforms );
 	m_bMuteOnError = false;
 	m_bStealthType = false;
+	m_bHideLights = false;
 	m_bStealthPastReceptors = false;
 	m_bDizzyHolds = false;
 	m_bZBuffer = false;
@@ -185,6 +186,7 @@ void PlayerOptions::Approach( const PlayerOptions& other, float fDeltaSeconds )
 		DO_COPY( m_bTransforms[i] );
 	DO_COPY( m_bMuteOnError );
 	DO_COPY( m_bStealthType );
+	DO_COPY(m_bHideLights);
 	DO_COPY( m_bStealthPastReceptors );
 	DO_COPY( m_bDizzyHolds );
 	DO_COPY( m_bZBuffer );
@@ -425,6 +427,7 @@ void PlayerOptions::GetMods( std::vector<RString> &AddTo, bool bForceNoteSkin ) 
 	AddPart( AddTo, m_fEffects[EFFECT_TWIRL],		"Twirl" );
 	AddPart( AddTo, m_fEffects[EFFECT_ROLL],		"Roll" );
 	AddPart( AddTo, m_bStealthType,				"StealthType" );
+	AddPart( AddTo, m_bHideLights,					"HideLights");
 	AddPart( AddTo, m_bStealthPastReceptors,		"StealthPastReceptors");
 	AddPart( AddTo, m_bDizzyHolds,				"DizzyHolds");
 	AddPart( AddTo, m_bZBuffer,				"ZBuffer");
@@ -1006,6 +1009,7 @@ bool PlayerOptions::FromOneModString( const RString &sOneMod, RString &sErrorOut
 	else if( sBit == "hiddenoffset" )			SET_FLOAT( fAppearances[APPEARANCE_HIDDEN_OFFSET] )
 	else if( sBit == "sudden" )				SET_FLOAT( fAppearances[APPEARANCE_SUDDEN] )
 	else if( sBit == "suddenoffset" )			SET_FLOAT( fAppearances[APPEARANCE_SUDDEN_OFFSET] )
+	else if (sBit == "hidelights")			m_bHideLights = on;
 	else if ( sBit.find("stealth") != sBit.npos)
 	{
 	    if( sBit == "stealth" )				SET_FLOAT( fAppearances[APPEARANCE_STEALTH] )
@@ -1427,6 +1431,7 @@ bool PlayerOptions::operator==( const PlayerOptions &other ) const
 	COMPARE(m_MinTNSToHideNotes);
 	COMPARE(m_bMuteOnError);
 	COMPARE(m_bStealthType);
+	COMPARE(m_bHideLights);
 	COMPARE(m_bStealthPastReceptors);
 	COMPARE(m_bDizzyHolds);
 	COMPARE(m_bZBuffer);
@@ -1510,6 +1515,7 @@ PlayerOptions& PlayerOptions::operator=(PlayerOptions const& other)
 	CPY(m_MinTNSToHideNotes);
 	CPY(m_bMuteOnError);
 	CPY(m_bStealthType);
+	CPY(m_bHideLights);
 	CPY(m_bStealthPastReceptors);
 	CPY(m_bDizzyHolds);
 	CPY(m_bZBuffer);
@@ -1778,6 +1784,7 @@ void PlayerOptions::ResetPrefs( ResetPrefsType type )
 	CPY(m_fDrawSize);
 	CPY(m_fDrawSizeBack);
 	CPY(m_bStealthType);
+	CPY(m_bHideLights);
 	CPY(m_bStealthPastReceptors);
 	CPY(m_bDizzyHolds);
 	CPY(m_bZBuffer);
@@ -2007,6 +2014,7 @@ public:
 	MULTICOL_FLOAT_INTERFACE(Reverse, Reverse, true);
 
 	BOOL_INTERFACE(StealthType, StealthType);
+	BOOL_INTERFACE(HideLights, HideLights);
 	BOOL_INTERFACE(StealthPastReceptors, StealthPastReceptors);
 	BOOL_INTERFACE(DizzyHolds, DizzyHolds);
 	BOOL_INTERFACE(ZBuffer, ZBuffer);
@@ -2548,6 +2556,7 @@ public:
 		ADD_METHOD(Blind);
 		ADD_METHOD(Cover);
 		ADD_METHOD(StealthType);
+		ADD_METHOD(HideLights);
 		ADD_METHOD(StealthPastReceptors);
 		ADD_METHOD(DizzyHolds);
 		ADD_METHOD(ZBuffer);

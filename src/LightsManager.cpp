@@ -11,6 +11,8 @@
 #include "Actor.h"
 #include "Preference.h"
 #include "GameManager.h"
+#include "PlayerState.h"
+#include "GameState.h"
 #include "CommonMetrics.h"
 #include "Style.h"
 
@@ -279,9 +281,15 @@ void LightsManager::Update( float fDeltaTime )
 		case LIGHTSMODE_DEMONSTRATION:
 		case LIGHTSMODE_GAMEPLAY:
 		{
-			FOREACH_CabinetLight( cl )
-				m_LightsState.m_bCabinetLights[cl] = m_fSecsLeftInCabinetLightBlink[cl] > 0;
+			FOREACH_CabinetLight(cl)
+			{
+				int pn = cl % 2 == 0 ? 0 : 1;
 
+				if (GAMESTATE->m_pPlayerState[pn]->m_PlayerOptions.GetPreferred().m_bHideLights)
+					continue;
+
+				m_LightsState.m_bCabinetLights[cl] = m_fSecsLeftInCabinetLightBlink[cl] > 0;
+			}
 			break;
 		}
 
