@@ -1,16 +1,43 @@
-/* LightsDriver_Win32Parallel - Control lights with Kit 74:
+/* LightsDriver_Win32ParallelNonno - Control lights with Kit Faith:
  *	http://www.google.com/search?hl=en&lr=&ie=UTF-8&oe=UTF-8&q=kit+74+relay */
 
-#ifndef LightsDriver_Win32Parallel_H
-#define LightsDriver_Win32Parallel_H
+#ifndef LightsDriver_Win32ParallelNonno_H
+#define LightsDriver_Win32ParallelNonno_H
 
-#include "LightsDriver_Win32ParallelBase.h"
+#include "arch/Lights/LightsDriver_Win32ParallelBase.h"
+#include "cPin.h"
 
-class LightsDriver_Win32Parallel : public LightsDriver_Win32ParallelBase
+class LightsDriver_Win32ParallelNonno : public LightsDriver_Win32ParallelBase
 {
+private:
+	unsigned char m_PortCabinet;
+	unsigned char m_PortPad;
+	unsigned char m_PortClock;
+
+	cPin m_PadP1_Left;
+	cPin m_PadP1_Right;
+	cPin m_PadP1_Up;
+	cPin m_PadP1_Down;
+	cPin m_PadP2_Left;
+	cPin m_PadP2_Right;
+	cPin m_PadP2_Up;
+	cPin m_PadP2_Down;
+
+	cPin m_Marquee_UpLeft;
+	cPin m_Marquee_UpRight;
+	cPin m_Marquee_LwLeft;
+	cPin m_Marquee_LwRight;
+	cPin m_Buttons_Left;
+	cPin m_Buttons_Right;
+	cPin m_Bass;
+	cPin m_Optional;
+
+	cPin m_PinClockPad;
+	cPin m_PinClockCabinet;
+
 public:
-	LightsDriver_Win32Parallel();
-	~LightsDriver_Win32Parallel() override = default;
+	LightsDriver_Win32ParallelNonno();
+	~LightsDriver_Win32ParallelNonno() override = default;
 
 	void Set( const LightsState *ls ) override;
 };

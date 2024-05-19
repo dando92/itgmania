@@ -36,3 +36,6 @@
 [submodule "Themes/Simply Love"]
 	path = Themes/Simply Love
 	url = https://github.com/dando92/Simply-Love-SM5.git
+[submodule "extern/hidapi"]
+	path = extern/hidapi
+	url = https://github.com/libusb/hidapi.git
