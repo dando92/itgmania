@@ -178,10 +178,13 @@ source_group("Arch Specific\\\\Loading Window"
 
 list(APPEND SMDATA_ARCH_LIGHTS_SRC "arch/Lights/LightsDriver.cpp"
             "arch/Lights/LightsDriver_Export.cpp"
+            "arch/Lights/LightsDriver_HidNonno.cpp"
             "arch/Lights/LightsDriver_SextetStream.cpp"
             "arch/Lights/LightsDriver_SystemMessage.cpp")
 list(APPEND SMDATA_ARCH_LIGHTS_HPP "arch/Lights/LightsDriver.h"
             "arch/Lights/LightsDriver_Export.h"
+			"arch/Lights/cPin.h"
+            "arch/Lights/LightsDriver_HidNonno.h"
             "arch/Lights/LightsDriver_SextetStream.h"
             "arch/Lights/LightsDriver_SystemMessage.h"
             "arch/Lights/SextetUtils.h")
@@ -192,9 +195,13 @@ if(NOT APPLE)
     list(APPEND SMDATA_ARCH_LIGHTS_SRC
                 "arch/Lights/LightsDriver_Win32Serial.cpp"
                 "arch/Lights/LightsDriver_Win32Parallel.cpp"
+				"arch/Lights/LightsDriver_Win32ParallelNonno.cpp"
+				"arch/Lights/LightsDriver_Win32ParallelBase.cpp"
                 "arch/Lights/LightsDriver_PacDrive.cpp")
     list(APPEND SMDATA_ARCH_LIGHTS_HPP
                 "arch/Lights/LightsDriver_Win32Parallel.h"
+				"arch/Lights/LightsDriver_Win32ParallelNonno.h"
+				"arch/Lights/LightsDriver_Win32ParallelBase.h"
                 "arch/Lights/LightsDriver_Win32Serial.h"
                 "arch/Lights/LightsDriver_PacDrive.h")
     if(WITH_MINIMAID)

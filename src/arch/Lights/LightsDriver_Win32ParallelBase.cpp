@@ -1,21 +1,48 @@
-/* LightsDriver_Win32Parallel - Control lights with Kit 74:
- *	http://www.google.com/search?hl=en&lr=&ie=UTF-8&oe=UTF-8&q=kit+74+relay */
-
-#ifndef LightsDriver_Win32Parallel_H
-#define LightsDriver_Win32Parallel_H
-
+#include "global.h"
 #include "LightsDriver_Win32ParallelBase.h"
+#include "windows.h"
+#include "RageUtil.h"
 
-class LightsDriver_Win32Parallel : public LightsDriver_Win32ParallelBase
+HINSTANCE hDLL = nullptr;
+
+typedef void (WINAPI PORTOUT)(short int Port, char Data);
+PORTOUT* PortOut = nullptr;
+typedef short int (WINAPI ISDRIVERINSTALLED)();
+ISDRIVERINSTALLED* IsDriverInstalled = nullptr;
+
+short LPT_ADDRESS[MAX_PARALLEL_PORTS] = 
 {
-public:
-	LightsDriver_Win32Parallel();
-	~LightsDriver_Win32Parallel() override = default;
-
-	void Set( const LightsState *ls ) override;
+	0x378,	// LPT1
+	0x278,	// LPT2
+	0x3bc,	// LPT3
 };
 
-#endif
+LightsDriver_Win32ParallelBase::LightsDriver_Win32ParallelBase()
+{
+	// init io.dll
+	hDLL = LoadLibrary("parallel_lights_io.dll");
+	if(hDLL == nullptr)
+	{
+		auto err = GetLastError();
+		MessageBox(nullptr, "Could not LoadLibrary( parallel_lights_io.dll ).", "ERROR", MB_OK );
+		return;
+	}
+
+	//Get the function pointers
+	PortOut = (PORTOUT*) GetProcAddress(hDLL, "PortOut");
+	IsDriverInstalled = (ISDRIVERINSTALLED*) GetProcAddress(hDLL, "IsDriverInstalled");
+}
+
+LightsDriver_Win32ParallelBase::~LightsDriver_Win32ParallelBase()
+{
+	FreeLibrary( hDLL );
+}
+
+void LightsDriver_Win32ParallelBase::Write(const int index, const char data)
+{
+	ASSERT(index < MAX_PARALLEL_PORTS);
+	PortOut(LPT_ADDRESS[index], data);
+}
 
 /*
  * (c) 2003-2004 Chris Danford

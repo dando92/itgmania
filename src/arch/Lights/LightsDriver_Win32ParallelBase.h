@@ -1,18 +1,23 @@
-/* LightsDriver_Win32Parallel - Control lights with Kit 74:
- *	http://www.google.com/search?hl=en&lr=&ie=UTF-8&oe=UTF-8&q=kit+74+relay */
+#ifndef LightsDriver_Win32ParallelBase_H
+#define LightsDriver_Win32ParallelBase_H
 
-#ifndef LightsDriver_Win32Parallel_H
-#define LightsDriver_Win32Parallel_H
+#include "arch/Lights/LightsDriver.h"
 
-#include "LightsDriver_Win32ParallelBase.h"
 
-class LightsDriver_Win32Parallel : public LightsDriver_Win32ParallelBase
+const int LIGHTS_PER_PARALLEL_PORT = 8;
+// xxx: don't hardcode the port addresses. -aj
+const int MAX_PARALLEL_PORTS = 3;
+
+class LightsDriver_Win32ParallelBase : public LightsDriver
 {
-public:
-	LightsDriver_Win32Parallel();
-	~LightsDriver_Win32Parallel() override = default;
+protected:
+	void Write(const int index, const char data);
 
-	void Set( const LightsState *ls ) override;
+public:
+	LightsDriver_Win32ParallelBase();
+	virtual ~LightsDriver_Win32ParallelBase();
+
+	virtual void Set(const LightsState* ls) = 0;
 };
 
 #endif
