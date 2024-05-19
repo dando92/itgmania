@@ -5,23 +5,6 @@
 
 REGISTER_LIGHTS_DRIVER_CLASS(Win32Parallel);
 
-HINSTANCE hDLL = nullptr;
-
-typedef void (WINAPI PORTOUT)(short int Port, char Data);
-PORTOUT* PortOut = nullptr;
-typedef short int (WINAPI ISDRIVERINSTALLED)();
-ISDRIVERINSTALLED* IsDriverInstalled = nullptr;
-
-const int LIGHTS_PER_PARALLEL_PORT = 8;
-// xxx: don't hardcode the port addresses. -aj
-const int MAX_PARALLEL_PORTS = 3;
-short LPT_ADDRESS[MAX_PARALLEL_PORTS] = 
-{
-	0x378,	// LPT1
-	0x278,	// LPT2
-	0x3bc,	// LPT3
-};
-
 int CabinetLightToIndex( CabinetLight cl )
 {
 	return cl;
@@ -40,24 +23,9 @@ void IndexToLptAndPin( int index, int &lpt_out, int &pin_out )
 	pin_out = index % LIGHTS_PER_PARALLEL_PORT;
 }
 
-LightsDriver_Win32Parallel::LightsDriver_Win32Parallel()
+LightsDriver_Win32Parallel::LightsDriver_Win32Parallel():
+	LightsDriver_Win32ParallelBase()
 {
-	// init io.dll
-	hDLL = LoadLibrary("parallel_lights_io.dll");
-	if(hDLL == nullptr)
-	{
-		MessageBox(nullptr, "Could not LoadLibrary( parallel_lights_io.dll ).", "ERROR", MB_OK );
-		return;
-	}
-
-	//Get the function pointers
-	PortOut = (PORTOUT*) GetProcAddress(hDLL, "PortOut");
-	IsDriverInstalled = (ISDRIVERINSTALLED*) GetProcAddress(hDLL, "IsDriverInstalled");
-}
-
-LightsDriver_Win32Parallel::~LightsDriver_Win32Parallel()
-{
-	FreeLibrary( hDLL );
 }
 
 void LightsDriver_Win32Parallel::Set( const LightsState *ls )
@@ -105,8 +73,7 @@ void LightsDriver_Win32Parallel::Set( const LightsState *ls )
 	{
 		for( int i=0; i<MAX_PARALLEL_PORTS; i++ )
 		{
-			short address = LPT_ADDRESS[i];
-			PortOut( address, data[i] );
+			Write(i, data[i]);
 		}
 	}
 }
