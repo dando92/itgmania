@@ -85,7 +85,7 @@ public:
 		m_fDrawSize(0), m_SpeedfDrawSize(1.0f),
 		m_fDrawSizeBack(0), m_SpeedfDrawSizeBack(1.0f),
 		m_bMuteOnError(false),
-		m_bStealthType(false), m_bStealthPastReceptors(false),
+		m_bStealthType(false), m_bHideLights(false), m_bStealthPastReceptors(false),
 		m_bDizzyHolds(false), m_bZBuffer(false),
 		m_bCosecant(false),
 		m_FailType(FailType_Immediate),
@@ -390,6 +390,7 @@ public:
 	bool		m_bTransforms[NUM_TRANSFORMS];
 	bool		m_bMuteOnError;
 	bool		m_bStealthType;
+	bool		m_bHideLights;
 	bool		m_bStealthPastReceptors;
 	bool		m_bDizzyHolds;
 	bool		m_bZBuffer;
