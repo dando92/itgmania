@@ -1,7 +1,4 @@
 #include <iostream>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <sys/socket.h>
 #include <cstring>
 #include <cstdlib>
 #include <string>
@@ -83,6 +80,7 @@ std::string formatScore(int currentDp, int possibleDp) {
 
 SyncStartManager::SyncStartManager()
 {
+	sock_init();
 	// Register with Lua.
 	{
 		Lua *L = LUA->Get();
@@ -100,6 +98,7 @@ SyncStartManager::SyncStartManager()
 SyncStartManager::~SyncStartManager()
 {
 	this->disable();
+	sock_cleanup();
 }
 
 bool SyncStartManager::isEnabled() const
@@ -111,7 +110,7 @@ void SyncStartManager::enable()
 {
 	// initialize
 	this->socketfd = socket(AF_INET, SOCK_DGRAM, 0);
-
+	
 	struct sockaddr_in addr;
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(PORT);
@@ -119,13 +118,25 @@ void SyncStartManager::enable()
 
 	// we need to be able to broadcast through this socket
 	int enableOpt = 1;
+#ifdef _WIN32
+	if (
+		setsockopt(this->socketfd, SOL_SOCKET, SO_BROADCAST, (char*) & enableOpt, sizeof(enableOpt)) == -1 ||
+		setsockopt(this->socketfd, SOL_SOCKET, SO_REUSEADDR, (char*) &enableOpt, sizeof(enableOpt)) == -1
+		) {
+		return;
+	}
+
+	u_long mode = 1;
+	ioctlsocket(this->socketfd, FIONBIO, &mode);
+#else
 	if (
 		setsockopt(this->socketfd, SOL_SOCKET, SO_BROADCAST, &enableOpt, sizeof(enableOpt)) == -1 ||
 		setsockopt(this->socketfd, SOL_SOCKET, SO_REUSEADDR, &enableOpt, sizeof(enableOpt)) == -1 ||
 		setsockopt(this->socketfd, SOL_SOCKET, SO_REUSEPORT, &enableOpt, sizeof(enableOpt)) == -1
-	) {
+		) {
 		return;
 	}
+#endif
 
 	if (bind(this->socketfd, (const struct sockaddr *)&addr, (socklen_t)sizeof(addr)) < 0) {
 		return;
@@ -153,7 +164,7 @@ void SyncStartManager::broadcast(char code, const std::string& msg) {
 		LOG->Info("BROADCASTING: code %d, msg: '%s'", code, msg.c_str());
 	#endif
 
-	if (sendto(this->socketfd, &buffer, length + 1, 0, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
+	if (sendto(this->socketfd, buffer, length + 1, 0, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
 		return;
 	}
 }
@@ -262,9 +273,8 @@ void SyncStartManager::receiveScoreChange(struct in_addr in_addr, const std::str
 		return;
 	}
 
-	ScorePlayer scorePlayer = {
-		.machineAddress = in_addr
-	};
+	ScorePlayer scorePlayer{};
+	scorePlayer.machineAddress = in_addr;
 
 	ScoreData scoreData;
 
@@ -315,7 +325,7 @@ void SyncStartManager::disable()
 {
 	if (this->socketfd > 0)
 	{
-		shutdown(this->socketfd, SHUT_RDWR);
+		sockClose(this->socketfd);
 		close(this->socketfd);
 	}
 
@@ -323,8 +333,7 @@ void SyncStartManager::disable()
 }
 
 int SyncStartManager::getNextMessage(char* buffer, sockaddr_in* remaddr, size_t bufferSize) {
-	socklen_t addrlen = sizeof remaddr;
-	return recvfrom(this->socketfd, buffer, bufferSize, MSG_DONTWAIT, (struct sockaddr *) remaddr, &addrlen);
+	return nonblocking_recv(this->socketfd, buffer, remaddr, bufferSize);
 }
 
 void SyncStartManager::Update() {

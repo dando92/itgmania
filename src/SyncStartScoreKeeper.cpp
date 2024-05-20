@@ -7,7 +7,7 @@
 #define MAX_POSSIBLE_DANCE_POINTS_DIFFERENCE 100
 
 bool operator<(const ScorePlayer& l, const ScorePlayer& r) {
-	return std::tie(l.machineAddress.s_addr, l.playerNumber) < std::tie(r.machineAddress.s_addr, r.playerNumber);
+	return std::tie(l.playerName, l.playerNumber) < std::tie(r.playerName, r.playerNumber);
 }
 
 float getScore(const SyncStartScore& score) {
@@ -54,10 +54,7 @@ std::vector<SyncStartScore> SyncStartScoreKeeper::GetScores(bool latestValues) {
 	scores.reserve(scoreBuffer.size());
 
 	for (auto iter = scoreBuffer.begin(); iter != scoreBuffer.end(); iter++) {
-		scores.emplace_back(SyncStartScore {
-			.player = iter->first,
-			.data = iter->second
-		});
+		scores.emplace_back(SyncStartScore { iter->first, iter->second });
 	}
 
 	std::sort(scores.begin(), scores.end(), latestValues ? sortByScore : sortByLostScore);
