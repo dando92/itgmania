@@ -116,27 +116,7 @@ void SyncStartManager::enable()
 	addr.sin_port = htons(PORT);
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	// we need to be able to broadcast through this socket
-	int enableOpt = 1;
-#ifdef _WIN32
-	if (
-		setsockopt(this->socketfd, SOL_SOCKET, SO_BROADCAST, (char*) & enableOpt, sizeof(enableOpt)) == -1 ||
-		setsockopt(this->socketfd, SOL_SOCKET, SO_REUSEADDR, (char*) &enableOpt, sizeof(enableOpt)) == -1
-		) {
-		return;
-	}
-
-	u_long mode = 1;
-	ioctlsocket(this->socketfd, FIONBIO, &mode);
-#else
-	if (
-		setsockopt(this->socketfd, SOL_SOCKET, SO_BROADCAST, &enableOpt, sizeof(enableOpt)) == -1 ||
-		setsockopt(this->socketfd, SOL_SOCKET, SO_REUSEADDR, &enableOpt, sizeof(enableOpt)) == -1 ||
-		setsockopt(this->socketfd, SOL_SOCKET, SO_REUSEPORT, &enableOpt, sizeof(enableOpt)) == -1
-		) {
-		return;
-	}
-#endif
+	init_socket(this->socketfd);
 
 	if (bind(this->socketfd, (const struct sockaddr *)&addr, (socklen_t)sizeof(addr)) < 0) {
 		return;

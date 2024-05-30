@@ -135,6 +135,30 @@ inline void sock_seterror(int err) {
 #endif /* _WIN32 */
 }
 
+inline void init_socket(socket_t sock)
+{
+	// we need to be able to broadcast through this socket
+	int enableOpt = 1;
+#ifdef _WIN32
+	if (
+		setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&enableOpt, sizeof(enableOpt)) == -1 ||
+		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&enableOpt, sizeof(enableOpt)) == -1 
+		) {
+		return;
+	}
+
+	u_long mode = 1;
+	ioctlsocket(sock, FIONBIO, &mode);
+#else
+	if (
+		setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &enableOpt, sizeof(enableOpt)) == -1 ||
+		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &enableOpt, sizeof(enableOpt)) == -1 ||
+		setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &enableOpt, sizeof(enableOpt)) == -1
+		) {
+		return;
+	}
+#endif
+}
 /*
  * This must be called before any subsequent socket function
  * calls. Only necessary for Windows; on unix systems, nothing
@@ -222,23 +246,5 @@ inline int nonblocking_recv(int socket, char* buffer, sockaddr_in* remaddr, size
 #endif /* _WIN32 */
 	
 }
-/*
- * Set the timeout for socket output (in milliseconds).
- * This has to be wrapped as Windows has a weird arg type.
- * Return value is the same as setsockopt().
- */
-inline int sock_setsendtimeout(socket_t sock, int32_t ms) {
-#ifdef _WIN32
-	return setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO,
-		reinterpret_cast<char*>(&ms), sizeof(ms));
-#else
-	struct timeval tv;
-	tv.tv_usec = 1000L * ((long)ms - (long)ms / 1000L * 1000L);
-	tv.tv_sec = (long)ms / 1000L;
-	return setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO,
-		reinterpret_cast<void*>(&tv), sizeof(tv));
-#endif /* _WIN32 */
-}
-
 
 #endif
