@@ -8,8 +8,8 @@
 class LightsDriver_HidBlueDot : public LightsDriver
 {
 private:
-	uint8_t m_iCabData[2];
-	uint8_t m_iPadData[2];
+	uint8_t m_iCabData[3];
+	uint8_t m_iPadData[3];
 	hid_device* handle;
 
 	cPin m_PadP1_Left;
