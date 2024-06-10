@@ -1,8 +1,8 @@
 #include "global.h"
 #include "LightsDriver_HidBlueDot.h"
 
-#define VID 0x04d8
-#define PID 0x0C
+#define VID 0x04BD
+#define PID 0xBD
 
 REGISTER_LIGHTS_DRIVER_CLASS(HidBlueDot);
 
@@ -17,14 +17,14 @@ LightsDriver_HidBlueDot::LightsDriver_HidBlueDot()
 	m_Bass(&m_iCabData[1], 0x40),
 	m_Optional(&m_iCabData[1], 0x80),
 
-	m_PadP2_Up(&m_iPadData[1], 0x01),
-	m_PadP2_Down(&m_iPadData[1], 0x02),
-	m_PadP2_Left(&m_iPadData[1], 0x04),
-	m_PadP2_Right(&m_iPadData[1], 0x08),
-	m_PadP1_Up(&m_iPadData[1], 0x10),
-	m_PadP1_Down(&m_iPadData[1], 0x20),
-	m_PadP1_Left(&m_iPadData[1], 0x40),
-	m_PadP1_Right(&m_iPadData[1], 0x80)
+	m_PadP1_Up(&m_iPadData[1], 0x01),
+	m_PadP1_Down(&m_iPadData[1], 0x02),
+	m_PadP1_Left(&m_iPadData[1], 0x04),
+	m_PadP1_Right(&m_iPadData[1], 0x08),
+	m_PadP2_Up(&m_iPadData[1], 0x10),
+	m_PadP2_Down(&m_iPadData[1], 0x20),
+	m_PadP2_Left(&m_iPadData[1], 0x40),
+	m_PadP2_Right(&m_iPadData[1], 0x80)
 {
 	m_iCabData[0] = 0x01;
 	m_iPadData[0] = 0x02;
