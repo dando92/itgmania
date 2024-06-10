@@ -17,14 +17,14 @@ LightsDriver_HidNonno::LightsDriver_HidNonno()
 	m_Bass(&m_iWriteData[2], 0x40),
 	m_Optional(&m_iWriteData[2], 0x80),
 
-	m_PadP1_Up(&m_iWriteData[1], 0x10),
-	m_PadP1_Down(&m_iWriteData[1], 0x20),
-	m_PadP1_Left(&m_iWriteData[1], 0x40),
-	m_PadP1_Right(&m_iWriteData[1], 0x80),
-	m_PadP2_Up(&m_iWriteData[1], 0x01),
-	m_PadP2_Down(&m_iWriteData[1], 0x02),
-	m_PadP2_Left(&m_iWriteData[1], 0x04),
-	m_PadP2_Right(&m_iWriteData[1], 0x08)
+	m_PadP1_Up(&m_iWriteData[1], 0x01),
+	m_PadP1_Down(&m_iWriteData[1], 0x02),
+	m_PadP1_Left(&m_iWriteData[1], 0x04),
+	m_PadP1_Right(&m_iWriteData[1], 0x08),
+	m_PadP2_Up(&m_iWriteData[1], 0x10),
+	m_PadP2_Down(&m_iWriteData[1], 0x20),
+	m_PadP2_Left(&m_iWriteData[1], 0x40),
+	m_PadP2_Right(&m_iWriteData[1], 0x80)
 {
 	// Open the device using the VID, PID,
 	// and optionally the Serial number.
