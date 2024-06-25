@@ -18,9 +18,10 @@
  * if it becomes needed.) */
 #include "RageInputDevice.h"	// for InputDevice
 #include "arch/RageDriver.h"
-
+#include "Preference.h"
 #include <vector>
 
+extern Preference<bool>	g_fBlockInput;
 
 /** @brief A class designed to handle special input devices. */
 class InputHandler: public RageDriver

@@ -10,6 +10,7 @@
 
 #include <vector>
 
+Preference<bool>	g_fBlockInput("BlockInput", false);
 
 void InputHandler::UpdateTimer()
 {
@@ -24,6 +25,9 @@ void InputHandler::ButtonPressed( DeviceInput di )
 		di.ts = m_LastUpdate.Half();
 		++m_iInputsSinceUpdate;
 	}
+
+	if (g_fBlockInput.Get() && di.device == DEVICE_KEYBOARD)
+		return;
 
 	INPUTFILTER->ButtonPressed( di );
 
