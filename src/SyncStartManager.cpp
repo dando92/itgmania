@@ -494,6 +494,18 @@ class LunaSyncStartManager: public Luna<SyncStartManager> {
             return 1;
         }
 
+		static int Enable(T* p, lua_State* L)
+		{
+			p->enable();
+			return 1;
+		}
+
+		static int Disable(T* p, lua_State* L)
+		{
+			p->disable();
+			return 1;
+		}
+
 		LunaSyncStartManager()
 		{
 			ADD_METHOD(IsEnabled);
@@ -501,7 +513,9 @@ class LunaSyncStartManager: public Luna<SyncStartManager> {
 			ADD_METHOD(GetLatestPlayerScores);
 			ADD_METHOD(BroadcastScoreChange);
             ADD_METHOD(BroadcastFinalScore);
-            ADD_METHOD(BroadcastFinalCourseScore);
+			ADD_METHOD(BroadcastFinalCourseScore);
+			ADD_METHOD(Enable);
+			ADD_METHOD(Disable);
 		}
 };
 
