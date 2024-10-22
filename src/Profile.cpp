@@ -122,6 +122,7 @@ int Profile::HighScoresForACourse::GetNumTimesPlayed() const
 void Profile::InitEditableData()
 {
 	m_sDisplayName = "";
+	m_sTeamName = "";
 	m_sCharacterID = "";
 	m_sLastUsedHighScoreName = "";
 	m_iWeightPounds = 0;
@@ -226,8 +227,12 @@ void Profile::InitCalorieData()
 
 RString Profile::GetDisplayNameOrHighScoreName() const
 {
-	if( !m_sDisplayName.empty() )
-		return m_sDisplayName;
+	if (!m_sDisplayName.empty()) {
+		if (!m_sTeamName.empty())
+			return m_sDisplayName + " ~ Team: " + m_sTeamName;
+		else
+			return m_sDisplayName;
+	}
 	else if( !m_sLastUsedHighScoreName.empty() )
 		return m_sLastUsedHighScoreName;
 	else
@@ -1522,6 +1527,7 @@ void Profile::SaveEditableDataToDir( RString sDir ) const
 	IniFile ini;
 
 	ini.SetValue( "Editable", "DisplayName",			m_sDisplayName );
+	ini.SetValue("Editable",  "TeamName",                  m_sTeamName );
 	ini.SetValue( "Editable", "CharacterID",			m_sCharacterID );
 	ini.SetValue( "Editable", "LastUsedHighScoreName",		m_sLastUsedHighScoreName );
 	ini.SetValue( "Editable", "WeightPounds",			m_iWeightPounds );
@@ -1542,6 +1548,7 @@ XNode* Profile::SaveGeneralDataCreateNode() const
 	// redundant to the game app.
 	pGeneralDataNode->AppendChild( "DisplayName",			GetDisplayNameOrHighScoreName() );
 	pGeneralDataNode->AppendChild( "CharacterID",			m_sCharacterID );
+	pGeneralDataNode->AppendChild("TeamName",				m_sTeamName );
 	pGeneralDataNode->AppendChild( "LastUsedHighScoreName",		m_sLastUsedHighScoreName );
 	pGeneralDataNode->AppendChild( "WeightPounds",			m_iWeightPounds );
 	pGeneralDataNode->AppendChild( "Voomax", m_Voomax );
@@ -1708,6 +1715,7 @@ ProfileLoadResult Profile::LoadEditableDataFromDir( RString sDir )
 	ini.ReadFile( fn );
 
 	ini.GetValue( "Editable", "DisplayName",			m_sDisplayName );
+	ini.GetValue("Editable", "TeamName",				 m_sTeamName);
 	ini.GetValue( "Editable", "CharacterID",			m_sCharacterID );
 	ini.GetValue( "Editable", "LastUsedHighScoreName",		m_sLastUsedHighScoreName );
 	ini.GetValue( "Editable", "WeightPounds",			m_iWeightPounds );
@@ -1736,6 +1744,7 @@ void Profile::LoadGeneralDataFromNode( const XNode* pNode )
 	const XNode* pTemp;
 
 	pNode->GetChildValue( "DisplayName",				m_sDisplayName );
+	pNode->GetChildValue("TeamName",					   m_sTeamName );
 	pNode->GetChildValue( "CharacterID",				m_sCharacterID );
 	pNode->GetChildValue( "LastUsedHighScoreName",			m_sLastUsedHighScoreName );
 	pNode->GetChildValue( "WeightPounds",				m_iWeightPounds );
@@ -2565,10 +2574,16 @@ public:
 	DEFINE_METHOD(GetType, m_Type);
 	DEFINE_METHOD(GetPriority, m_ListPriority);
 
-	static int GetDisplayName( T* p, lua_State *L )			{ lua_pushstring(L, p->m_sDisplayName ); return 1; }
+	static int GetDisplayName( T* p, lua_State *L ) { lua_pushstring(L, p->m_sDisplayName); return 1; }
 	static int SetDisplayName( T* p, lua_State *L )
 	{
 		p->m_sDisplayName= SArg(1);
+		COMMON_RETURN_SELF;
+	}
+	static int GetTeamName(T* p, lua_State* L) { lua_pushstring(L, p->m_sTeamName); return 1; }
+	static int SetTeamName(T* p, lua_State* L)
+	{
+		p->m_sTeamName = SArg(1);
 		COMMON_RETURN_SELF;
 	}
 	static int GetLastUsedHighScoreName( T* p, lua_State *L )	{ lua_pushstring(L, p->m_sLastUsedHighScoreName ); return 1; }
@@ -2801,6 +2816,8 @@ public:
 		ADD_METHOD( GetPriority );
 		ADD_METHOD( GetDisplayName );
 		ADD_METHOD( SetDisplayName );
+		ADD_METHOD( GetTeamName );
+		ADD_METHOD( SetTeamName );
 		ADD_METHOD( GetLastUsedHighScoreName );
 		ADD_METHOD( SetLastUsedHighScoreName );
 		ADD_METHOD( GetAllUsedHighScoreNames );

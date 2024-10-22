@@ -94,7 +94,7 @@ public:
 	// changes the list priority of a profile. -Kyz
 	Profile():
 	m_Type(ProfileType_Normal), m_ListPriority(0),
-		m_sDisplayName(""), m_sCharacterID(""),
+		m_sDisplayName(""), m_sTeamName(""), m_sCharacterID(""),
 		m_sLastUsedHighScoreName(""), m_iWeightPounds(0),
 		m_Voomax(0), m_BirthYear(0), m_IgnoreStepCountCalories(false),
 		m_IsMale(true),
@@ -180,6 +180,7 @@ public:
 
 	// Editable data
 	RString m_sDisplayName;
+	RString m_sTeamName;
 	RString m_sCharacterID;
 	/**
 	 * @brief The last used name for high scoring purposes.
