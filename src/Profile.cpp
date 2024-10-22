@@ -1366,6 +1366,7 @@ ProfileLoadResult Profile::LoadStatsXmlFromNode( const XNode *xml, bool bIgnoreE
 
 	// These are loaded from Editable, so we usually want to ignore them here.
 	RString sName = m_sDisplayName;
+	RString sTeam = m_sTeamName;
 	RString sCharacterID = m_sCharacterID;
 	RString sLastUsedHighScoreName = m_sLastUsedHighScoreName;
 	int iWeightPounds = m_iWeightPounds;
@@ -1385,6 +1386,7 @@ ProfileLoadResult Profile::LoadStatsXmlFromNode( const XNode *xml, bool bIgnoreE
 	{
 		m_sDisplayName = sName;
 		m_sCharacterID = sCharacterID;
+		m_sTeamName = sTeam;
 		m_sLastUsedHighScoreName = sLastUsedHighScoreName;
 		m_iWeightPounds = iWeightPounds;
 		m_Voomax= Voomax;
@@ -1724,7 +1726,7 @@ ProfileLoadResult Profile::LoadEditableDataFromDir( RString sDir )
 	ini.GetValue( "Editable", "IgnoreStepCountCalories", m_IgnoreStepCountCalories );
 	ini.GetValue( "Editable", "IsMale", m_IsMale );
 
-	// This is data that the user can change, so we have to validate it.
+	// This is data that the user ca			n change, so we have to validate it.
 	std::wstring wstr = RStringToWstring(m_sDisplayName);
 	if( wstr.size() > PROFILE_MAX_DISPLAY_NAME_LENGTH )
 		wstr = wstr.substr(0, PROFILE_MAX_DISPLAY_NAME_LENGTH);

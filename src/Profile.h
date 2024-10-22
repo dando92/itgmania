@@ -57,6 +57,8 @@ extern const RString LASTGOOD_SUBDIR;
 /** @brief The max number of characters that can be used in a profile. */
 const unsigned int PROFILE_MAX_DISPLAY_NAME_LENGTH	= 32;
 
+const unsigned int PROFILE_MAX_TEAM_NAME_LENGTH = 32;
+
 
 class Style;
 

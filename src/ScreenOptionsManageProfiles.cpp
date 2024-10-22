@@ -22,6 +22,7 @@ static LocalizedString NEW_PROFILE_DEFAULT_NAME( "ScreenOptionsManageProfiles", 
 
 AutoScreenMessage( SM_BackFromEnterNameForNew );
 AutoScreenMessage( SM_BackFromRename );
+AutoScreenMessage( SM_BackFromRenameTeam );
 AutoScreenMessage( SM_BackFromDeleteConfirm );
 AutoScreenMessage( SM_BackFromClearConfirm );
 AutoScreenMessage( SM_BackFromContextMenu );
@@ -31,6 +32,7 @@ enum ProfileAction
 	ProfileAction_SetDefaultP1,
 	ProfileAction_SetDefaultP2,
 	ProfileAction_Edit,
+	ProfileAction_EditTeam,
 	ProfileAction_Rename,
 	ProfileAction_Delete,
 	ProfileAction_Clear,
@@ -49,6 +51,7 @@ static const char *ProfileActionNames[] = {
 	"SetDefaultP1",
 	"SetDefaultP2",
 	"Edit",
+	"EditTeam",
 	"Rename",
 	"Delete",
 	"Clear",
@@ -91,6 +94,17 @@ static bool ValidateLocalProfileName( const RString &sAnswer, RString &sErrorOut
 	if( bAlreadyAProfileWithThisName )
 	{
 		sErrorOut = PROFILE_NAME_CONFLICTS;
+		return false;
+	}
+
+	return true;
+}
+
+static bool ValidateTeamName(const RString& sAnswer, RString& sErrorOut)
+{
+	if (sAnswer == "")
+	{
+		sErrorOut = PROFILE_NAME_BLANK;
 		return false;
 	}
 
@@ -185,6 +199,7 @@ void ScreenOptionsManageProfiles::BeginScreen()
 static LocalizedString CONFIRM_DELETE_PROFILE	( "ScreenOptionsManageProfiles", "Are you sure you want to delete the profile '%s'?" );
 static LocalizedString CONFIRM_CLEAR_PROFILE	( "ScreenOptionsManageProfiles", "Are you sure you want to clear all data in the profile '%s'?" );
 static LocalizedString ENTER_PROFILE_NAME	( "ScreenOptionsManageProfiles", "Enter a name for the profile." );
+static LocalizedString ENTER_TEAM_NAME   ("ScreenOptionsManageProfiles", "Enter a team for the profile.");
 void ScreenOptionsManageProfiles::HandleScreenMessage( const ScreenMessage SM )
 {
 	if( SM == SM_GoToNextScreen )
@@ -256,6 +271,23 @@ void ScreenOptionsManageProfiles::HandleScreenMessage( const ScreenMessage SM )
 			SCREENMAN->SetNewScreen( this->m_sName ); // reload
 		}
 	}
+	else if (SM == SM_BackFromRenameTeam)
+	{
+		if (!ScreenTextEntry::s_bCancelledLast)
+		{
+			ASSERT(ScreenTextEntry::s_sLastAnswer != "");	// validate should have assured this
+
+			RString sNewName = ScreenTextEntry::s_sLastAnswer;
+			PROFILEMAN->RenameTeamName(GAMESTATE->m_sEditLocalProfileID, sNewName);
+			if (PREFSMAN->m_ProfileSortOrder == ProfileSortOrder_Alphabetical)
+			{
+				PROFILEMAN->MoveProfileSorted(
+					GetLocalProfileIndexWithFocus(),
+					PREFSMAN->m_bProfileSortOrderAscending);
+			}
+			SCREENMAN->SetNewScreen(this->m_sName); // reload
+		}
+	}
 	else if( SM == SM_BackFromDeleteConfirm )
 	{
 		if( ScreenPrompt::s_LastAnswer == ANSWER_YES )
@@ -313,13 +345,23 @@ void ScreenOptionsManageProfiles::HandleScreenMessage( const ScreenMessage SM )
 					ScreenOptions::BeginFadingOut();
 				}
 				break;
+			case ProfileAction_EditTeam:
+			{
+				ScreenTextEntry::TextEntry(
+					SM_BackFromRenameTeam,
+					ENTER_TEAM_NAME,
+					pProfile->m_sTeamName,
+					PROFILE_MAX_DISPLAY_NAME_LENGTH,
+					ValidateTeamName);
+			}
+			break;
 			case ProfileAction_Rename:
 				{
 					ScreenTextEntry::TextEntry(
 						SM_BackFromRename,
 						ENTER_PROFILE_NAME,
 						pProfile->m_sDisplayName,
-						PROFILE_MAX_DISPLAY_NAME_LENGTH,
+						PROFILE_MAX_TEAM_NAME_LENGTH,
 						ValidateLocalProfileName );
 				}
 				break;
@@ -448,6 +490,7 @@ void ScreenOptionsManageProfiles::ProcessMenuStart( const InputEventPlus & )
 		else
 		{
 			ADD_ACTION( ProfileAction_Edit );
+			ADD_ACTION(ProfileAction_EditTeam);
 			ADD_ACTION( ProfileAction_Rename );
 			ADD_ACTION( ProfileAction_Delete );
 			ADD_ACTION( ProfileAction_MergeToMachine );

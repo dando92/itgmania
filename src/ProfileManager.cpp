@@ -785,6 +785,19 @@ bool ProfileManager::RenameLocalProfile( RString sProfileID, RString sNewName )
 	return pProfile->SaveAllToDir( sProfileDir, PREFSMAN->m_bSignProfileData );
 }
 
+bool ProfileManager::RenameTeamName(RString sProfileID, RString sNewName)
+{
+	ASSERT(!sProfileID.empty());
+
+	Profile* pProfile = ProfileManager::GetLocalProfile(sProfileID);
+	ASSERT(pProfile != nullptr);
+	pProfile->m_sTeamName = sNewName;
+
+	RString sProfileDir = LocalProfileIDToDir(sProfileID);
+	return pProfile->SaveAllToDir(sProfileDir, PREFSMAN->m_bSignProfileData);
+}
+
+
 bool ProfileManager::DeleteLocalProfile( RString sProfileID )
 {
 	Profile *pProfile = ProfileManager::GetLocalProfile( sProfileID );
