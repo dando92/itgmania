@@ -22,7 +22,7 @@ static LocalizedString NEW_PROFILE_DEFAULT_NAME( "ScreenOptionsManageProfiles", 
 
 AutoScreenMessage( SM_BackFromEnterNameForNew );
 AutoScreenMessage( SM_BackFromRename );
-AutoScreenMessage( SM_BackFromRenameTeam );
+AutoScreenMessage( SM_BackFromEditTeam );
 AutoScreenMessage( SM_BackFromDeleteConfirm );
 AutoScreenMessage( SM_BackFromClearConfirm );
 AutoScreenMessage( SM_BackFromContextMenu );
@@ -102,12 +102,11 @@ static bool ValidateLocalProfileName( const RString &sAnswer, RString &sErrorOut
 
 static bool ValidateTeamName(const RString& sAnswer, RString& sErrorOut)
 {
-	if (sAnswer == "")
+	if (sAnswer.length() > PROFILE_MAX_TEAM_NAME_LENGTH)
 	{
-		sErrorOut = PROFILE_NAME_BLANK;
+		sErrorOut = ssprintf("Team name cannot be longer than %d characters.", PROFILE_MAX_TEAM_NAME_LENGTH);
 		return false;
 	}
-
 	return true;
 }
 
@@ -271,14 +270,12 @@ void ScreenOptionsManageProfiles::HandleScreenMessage( const ScreenMessage SM )
 			SCREENMAN->SetNewScreen( this->m_sName ); // reload
 		}
 	}
-	else if (SM == SM_BackFromRenameTeam)
+	else if (SM == SM_BackFromEditTeam)
 	{
 		if (!ScreenTextEntry::s_bCancelledLast)
 		{
-			ASSERT(ScreenTextEntry::s_sLastAnswer != "");	// validate should have assured this
-
 			RString sNewName = ScreenTextEntry::s_sLastAnswer;
-			PROFILEMAN->RenameTeamName(GAMESTATE->m_sEditLocalProfileID, sNewName);
+			PROFILEMAN->EditTeamName(GAMESTATE->m_sEditLocalProfileID, sNewName);
 			if (PREFSMAN->m_ProfileSortOrder == ProfileSortOrder_Alphabetical)
 			{
 				PROFILEMAN->MoveProfileSorted(
@@ -348,7 +345,7 @@ void ScreenOptionsManageProfiles::HandleScreenMessage( const ScreenMessage SM )
 			case ProfileAction_EditTeam:
 			{
 				ScreenTextEntry::TextEntry(
-					SM_BackFromRenameTeam,
+					SM_BackFromEditTeam,
 					ENTER_TEAM_NAME,
 					pProfile->m_sTeamName,
 					PROFILE_MAX_DISPLAY_NAME_LENGTH,

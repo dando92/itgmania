@@ -45,7 +45,7 @@ public:
 	bool CreateLocalProfile( RString sName, RString &sProfileIDOut );
 	void AddLocalProfileByID( Profile *pProfile, RString sProfileID ); // transfers ownership of pProfile
 	bool RenameLocalProfile( RString sProfileID, RString sNewName );
-	bool RenameTeamName(RString sProfileID, RString sNewName);
+	bool EditTeamName(RString sProfileID, RString sNewName);
 	bool DeleteLocalProfile( RString sProfileID );
 	void GetLocalProfileIDs( std::vector<RString> &vsProfileIDsOut ) const;
 	void GetLocalProfileDisplayNames( std::vector<RString> &vsProfileDisplayNamesOut ) const;
